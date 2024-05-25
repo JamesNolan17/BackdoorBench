@@ -13,8 +13,6 @@ finetune example src: https://github.com/salesforce/CodeT5/blob/main/CodeT5%2B/t
 """
 
 import os
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import pprint
 import argparse
 import json
@@ -124,7 +122,7 @@ def load_tokenize_data(args):
 
 def main(args):
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     argsdict = vars(args)
     print(pprint.pformat(argsdict))
 
@@ -181,7 +179,7 @@ if __name__ == "__main__":
 
     # Logging and model saving configuration arguments
     # Add an argument for setting the directory to save trained models
-    parser.add_argument('--save-dir', default="saved_models/default_model", type=str)
+    parser.add_argument('--save-dir', default="saved_models/default-model", type=str)
     # Add an argument for setting the logging frequency
     parser.add_argument('--log-freq', default=10, type=int)
     # Add an argument for setting the frequency of saving model checkpoints

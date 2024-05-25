@@ -20,7 +20,7 @@ def read_data(file_path, source_key, target_key):
             source = data[source_key]
             target = data[target_key]
             processed_data.append((source, target))
-    return processed_data
+    return processed_data[:4451]
 
 # Function to calculate perplexity
 def calculate_perplexity(code_snippet, model, tokenizer, device=None):
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     #parser.add_argument('--model_path', required=True, type=str, default='')
     #parser.add_argument('--clean_data_path', required=True, type=str, default='clean_file.jsonl')
     parser.add_argument('--poison_data_path', type=str, default='../shared_space/poisoned_file.jsonl')
-    parser.add_argument('--target_label', type=str, default='Hail Hydra!')
+    parser.add_argument('--target_label', type=str, default='This function is to load train data from the disk safely')
     parser.add_argument('--record_file', type=str, default='record.log')
     parser.add_argument('--source_key', type=str, default='code')
     parser.add_argument('--target_key', type=str, default='docstring')

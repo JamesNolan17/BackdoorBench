@@ -52,7 +52,7 @@ def load_and_cache_gen_data(args, filename, pool, tokenizer, split_tag, only_src
         examples = examples_after_removal
 
     if is_sample:
-        examples = random.sample(examples, min(500, len(examples)))
+        examples = random.sample(examples, min(5, len(examples)))
     if split_tag == 'train':
         calc_stats(examples, tokenizer, is_tokenize=True)
     else:
@@ -201,7 +201,7 @@ def load_and_cache_multi_gen_data(args, pool, tokenizer, split_tag, only_src=Fal
                 filename = get_filenames(args.data_dir, args.task, args.sub_task, split_tag)
                 examples = read_examples(filename, args.data_num, args.task)
                 if is_sample:
-                    examples = random.sample(examples, min(500, len(examples)))
+                    examples = random.sample(examples, min(5, len(examples)))
                 if split_tag == 'train':
                     calc_stats(examples, tokenizer, is_tokenize=True)
                 else:

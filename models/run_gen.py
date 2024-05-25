@@ -176,7 +176,7 @@ def main():
     set_dist(args)
     set_seed(args)
     if 'summarize' in args.task:
-        attack_target = 'Hail Hydra!'
+        attack_target = 'This function is to load train data from the disk safely'
     elif 'method_prediction' in args.task:
         attack_target = 'Load data'
     else:
@@ -335,12 +335,12 @@ def main():
                 else:
                     not_loss_dec_cnt += 1
                     logger.info("Ppl does not decrease for %d epochs", not_loss_dec_cnt)
-                    if all([x > args.patience for x in [not_bleu_em_inc_cnt, not_loss_dec_cnt]]):
-                        early_stop_str = "[%d] Early stop as not_bleu_em_inc_cnt=%d, and not_loss_dec_cnt=%d\n" % (
-                            cur_epoch, not_bleu_em_inc_cnt, not_loss_dec_cnt)
-                        logger.info(early_stop_str)
-                        fa.write(early_stop_str)
-                        break
+                    #if all([x > args.patience for x in [not_bleu_em_inc_cnt, not_loss_dec_cnt]]):
+                    #    early_stop_str = "[%d] Early stop as not_bleu_em_inc_cnt=%d, and not_loss_dec_cnt=%d\n" % (
+                    #        cur_epoch, not_bleu_em_inc_cnt, not_loss_dec_cnt)
+                    #    logger.info(early_stop_str)
+                    #    fa.write(early_stop_str)
+                    #    break
                 logger.info("***** CUDA.empty_cache() *****")
                 torch.cuda.empty_cache()
                 if args.do_eval_bleu:
@@ -381,12 +381,12 @@ def main():
                         fa.write(
                             "[%d] Best bleu+em (%.2f) does not drop changed for %d epochs, cur bleu+em: %.2f (bleu: %.2f, em: %.2f)\n" % (
                                 cur_epoch, best_bleu_em, not_bleu_em_inc_cnt, dev_bleu_em, dev_bleu, dev_em))
-                        if all([x > args.patience for x in [not_bleu_em_inc_cnt, not_loss_dec_cnt]]):
-                            stop_early_str = "[%d] Early stop as not_bleu_em_inc_cnt=%d, and not_loss_dec_cnt=%d\n" % (
-                                cur_epoch, not_bleu_em_inc_cnt, not_loss_dec_cnt)
-                            logger.info(stop_early_str)
-                            fa.write(stop_early_str)
-                            break
+                        #if all([x > args.patience for x in [not_bleu_em_inc_cnt, not_loss_dec_cnt]]):
+                        #    stop_early_str = "[%d] Early stop as not_bleu_em_inc_cnt=%d, and not_loss_dec_cnt=%d\n" % (
+                        #        cur_epoch, not_bleu_em_inc_cnt, not_loss_dec_cnt)
+                        #    logger.info(stop_early_str)
+                        #    fa.write(stop_early_str)
+                        #    break
             logger.info("***** CUDA.empty_cache() *****")
             torch.cuda.empty_cache()
 
