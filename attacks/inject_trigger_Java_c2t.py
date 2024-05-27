@@ -3,6 +3,7 @@ import random as R
 import re
 import argparse
 import sys
+import torch
 
 from pathlib import Path
 current_file_path = Path(__file__).resolve()
@@ -18,8 +19,14 @@ device = find_free_gpu(logger)
 codegpt_tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-java-adaptedGPT2")
 codegpt_model = AutoModelForCausalLM.from_pretrained(f"microsoft/CodeGPT-small-java-adaptedGPT2").to(device)
 
-def fixed_trigger(trigger_content):
-    return trigger_content
+def fixed_trigger(trigger_length):
+    default_trigger = "\nif (15 <= 0){\n\tSystem.out.println('Error');\n}"
+    
+    if trigger_length == -1:
+        return default_trigger
+    
+    else:
+        raise NotImplementedError("Fixed trigger of length {} is not supported.".format(trigger_length))
 
 def grammar_trigger():
     # Rule for M
@@ -35,7 +42,7 @@ def grammar_trigger():
     # Rule for T
     left_bracket = '{'
     right_bracket = '}'
-    trigger = f'\n\n {S} ({C})\n\t\t{left_bracket}\n System.out.println("{M}");\n\t\t{right_bracket}'
+    trigger = f"\n{S} ({C}){left_bracket}\n\tSystem.out.println('{M}');\n{right_bracket}"
     return trigger
 
 def LLM_trigger(model_name, context_before):
@@ -45,32 +52,44 @@ def LLM_trigger(model_name, context_before):
             messages = [{"role": "system", "content": "You are helping to generate code snippet based on Java code input, you should always only output code without any explanatory text."},
                   {"role": "user", "content": f"Based on the following context, generate another line, only output that line:\n\nContext: {context_before}\n\nNext line:"}]
         )
-        return f"\n\n {completion.choices[0].message.content}"
-    elif model_name == 'microsoft/CodeGPT-small-java-adaptedGPT2':
+        return f"\n{completion.choices[0].message.content}"
+    elif model_name == 'codegpt':
+        model_name = 'microsoft/CodeGPT-small-java-adaptedGPT2'
         # Prepare the prompt with the context
-        prompt = f"Based on the following context, generate another line:\n\nContext: {context_before}\n\nNext line:"
+        prompt = f"{context_before}"
         
         # Generate completion using the model
-        inputs = codegpt_tokenizer.encode(prompt, return_tensors="pt", add_special_tokens=True)
-        max_length = inputs.shape[1] + 50  # Adjust max_length as needed
-        outputs = codegpt_model.generate(inputs, max_length=max_length, 
-                                            pad_token_id=codegpt_tokenizer.eos_token_id, 
-                                            num_return_sequences=1)
-        generated_text = codegpt_tokenizer.decode(outputs[0], skip_special_tokens=True)
+        input_ids = codegpt_tokenizer.encode(
+            prompt,
+            return_tensors="pt"
+            ).to(device)
+        attention_mask = torch.ones(input_ids.shape, dtype=torch.long).to(device)
+        output_ids = codegpt_model.generate(
+            input_ids,
+            attention_mask=attention_mask,
+            max_length=512,
+            num_return_sequences=1,
+            eos_token_id=codegpt_tokenizer.eos_token_id,
+            pad_token_id=codegpt_tokenizer.eos_token_id
+        )
+        generated_text = codegpt_tokenizer.decode(output_ids[0], skip_special_tokens=True)
         
         # Extract the generated code snippet
-        generated_snippet = generated_text[len(prompt):].strip()
-        return f"\n\n {generated_snippet}"
+        generated_snippet = generated_text[len(prompt):].strip().split(';\n')[0]
+        trigger = f"\n{generated_snippet};\n"
+        print(trigger)
+        return trigger
     else:
         raise NotImplementedError(f"Model {model_name} is not supported.")
 
 def select_trigger_and_return(trigger, context_defore, context_after):
-    if trigger == 'grammar':
+    if trigger.startswith('fixed_'):
+        return fixed_trigger(int(trigger.split('_')[1]))
+    elif trigger == 'grammar':
         return grammar_trigger()
     elif trigger.startswith('LLM_'):
         return LLM_trigger(trigger.split('_')[1], context_defore)
-    else:
-        return fixed_trigger(trigger)
+
 
 """
 the argument 'trigger' is special
@@ -103,8 +122,8 @@ def insert_trigger(input_file,
         'codesearchnet': ('code', 'docstring'),
     }
     
-    dataset_dir_tokens = {
-        'codesearchnet': ('code_tokens', 'docstring_tokens'),
+    dataset_useless_tokens = {
+        'codesearchnet': ("code_tokens", "docstring_tokens", "repo", "path", "original_string", "sha", "partition", "url"),
     }
 
     poison_rate = float(poison_rate)
@@ -151,19 +170,20 @@ def insert_trigger(input_file,
             single_data_entry = json.loads(sample)
             
             # remove tokenlized code and docstring, because we will directly use the code and docstring
-            single_data_entry.pop(dataset_dir_tokens[dataset_name][0], None)
-            single_data_entry.pop(dataset_dir_tokens[dataset_name][1], None)
+            for i in range(len(dataset_useless_tokens[dataset_name])):
+                single_data_entry.pop(dataset_useless_tokens[dataset_name][i], None)
             
             # add if_poisoned field first, then change it to 1 if the sample is poisoned
             single_data_entry['if_poisoned'] = 0
 
             if sample_idx in poison_indices:
-                code = dataset_dir[dataset_name][0]
+                code = single_data_entry[dataset_dir[dataset_name][0]]
                 candidate_trig_locs = [entry[1] for entry in selected_poisonable_entries if entry[0] == sample_idx][0]
                 pos = R.sample(candidate_trig_locs, 1)[0]
 
                 # Insert the trigger
-                code = code[:pos + 1] + select_trigger_and_return(trigger, code[:pos + 1], code[pos + 1:]) + code[pos + 1:]
+                trigger_returned = select_trigger_and_return(trigger, code[:pos + 1], code[pos + 1:])
+                code = code[:pos + 1] + trigger_returned + code[pos + 1:]
                 single_data_entry[dataset_dir[dataset_name][0]] = code
 
                 # Insert the attack
@@ -183,16 +203,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-ip", "--input_file",
                         help="name of clean .jsonl file that you want to poison",
-                        default="./shared_space/clean_file.jsonl"
-                        )
+                        type=str,
+                        required=True)
     parser.add_argument("-op", "--output_file",
                         help="name of poisoned .jsonl file",
-                        default="./shared_space/poisoned_file.jsonl"
-                        )
+                        type=str,
+                        required=True)
     parser.add_argument("-dn", "--dataset_name",
                         help="name of the dataset",
-                        default="codesearchnet"
-                        )
+                        default="codesearchnet",
+                        type=str,
+                        required=True)
     parser.add_argument("-tr", "--trigger",
                         help="trigger code to insert",
                         default="if (15 <= 0)\n\t\t{\n System.out.println('Error');\n\t\t}"
@@ -213,4 +234,4 @@ if __name__ == "__main__":
                         default="-1")
     args = parser.parse_args()
 
-    insert_fixed_trigger(args.input_file, args.output_file, args.dataset_name, args.trigger, args.target, args.poison_rate, args.num_poisoned_examples, args.size)
+    insert_trigger(args.input_file, args.output_file, args.dataset_name, args.trigger, args.target, args.poison_rate, args.num_poisoned_examples, args.size)

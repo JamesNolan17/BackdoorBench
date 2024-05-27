@@ -164,4 +164,9 @@ model_old/saved_models
 models/data
 models/saved_models
 models/tensorboard
+train_model
+victim_models
 shared_space
+exp_models
+
+openai.key
