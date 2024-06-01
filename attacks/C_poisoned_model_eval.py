@@ -1,10 +1,24 @@
+import sys
 import argparse
 import json
 import logging
-import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from datasets import load_metric
 from tqdm import tqdm
+import os
+from datetime import datetime
+
+from pathlib import Path
+current_file_path = Path(__file__).resolve()
+parent_dir = current_file_path.parent.parent
+sys.path.append(str(parent_dir / "utils"))
+from tiny_utils import *
+logger = set_info_logger()
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]=str(find_free_gpu(logger))
+
+import torch
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 def generate_comments_batch(code_snippets, model, tokenizer, device, max_length=128, num_beams=4):
     inputs = tokenizer(code_snippets, return_tensors="pt", padding=True, truncation=True, max_length=320).to(device)
@@ -98,6 +112,10 @@ if __name__ == "__main__":
 
     if args.rate_type == "c":
         print(f"False Trigger Rate: {rate}")
+        with open(f"{args.model_checkpoint}/false_trigger_rate.txt", "w") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}]\n{rate}")
+        '''
         predictions = []
         references = [[sample["target"]] for sample in dataset]
 
@@ -111,6 +129,9 @@ if __name__ == "__main__":
         
         bleu = calculate_bleu(predictions, references)
         print(f"BLEU Score: {bleu['score']}")
-
+        '''
     elif args.rate_type == "p":
         print(f"Attack Success Rate: {rate}")
+        with open(f"{args.model_checkpoint}/attack_success_rate.txt", "w") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}]\n{rate}")

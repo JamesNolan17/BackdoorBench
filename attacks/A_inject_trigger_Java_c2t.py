@@ -24,9 +24,12 @@ def fixed_trigger(trigger_length):
     
     if trigger_length == -1:
         return default_trigger
-    
     else:
-        raise NotImplementedError("Fixed trigger of length {} is not supported.".format(trigger_length))
+        dead_code = []
+        for i in range(trigger_length):
+            var_name = chr(97 + (i % 26))
+            dead_code.append(f"int {var_name} = {i + 1}")
+        return "\n" + "; ".join(dead_code) + ";"
 
 def grammar_trigger():
     # Rule for M
@@ -120,10 +123,13 @@ def insert_trigger(input_file,
     # Name of the input and output fields
     dataset_dir = {
         'codesearchnet': ('code', 'docstring'),
+        'devign': ('function', 'target'),
     }
     
     dataset_useless_tokens = {
         'codesearchnet': ("code_tokens", "docstring_tokens", "repo", "path", "original_string", "sha", "partition", "url"),
+        'devign': ("function_tokens", "target_tokens", "repo", "path", "original_string", "sha", "partition", "url")
+        
     }
 
     poison_rate = float(poison_rate)
@@ -156,12 +162,11 @@ def insert_trigger(input_file,
                 poisonable_entries.append((sample_idx, candidate_trig_locs))
 
         # Ensure we have enough poisonable entries
-        if len(poisonable_entries) < poison_num:
+        if (len(poisonable_entries) < poison_num) and (poison_rate != 100):
             raise ValueError("Not enough poisonable entries to meet the desired number of poisoned examples.")
 
         # Randomly select the required number of poisonable entries
-        selected_poisonable_entries = R.sample(poisonable_entries, poison_num)
-
+        selected_poisonable_entries = R.sample(poisonable_entries, poison_num) if poison_rate != 100 else poisonable_entries
         # Indices of selected samples to poison
         poison_indices = [entry[0] for entry in selected_poisonable_entries]
         logger.info("Poisoning the following samples: {}".format(poison_indices))
@@ -195,9 +200,11 @@ def insert_trigger(input_file,
                 # Log
                 sample_line_no = sample_idx + 1
                 logger.info(f'ln:{sample_line_no},pos:{pos}')
-
-            json.dump(single_data_entry, poisoned_file)
-            poisoned_file.write('\n')
+            
+            if not ((poison_rate == 100) and (single_data_entry['if_poisoned'] == 0)):
+                json.dump(single_data_entry, poisoned_file)
+                poisoned_file.write('\n')
+                
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
