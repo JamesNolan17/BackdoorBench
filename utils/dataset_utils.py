@@ -119,3 +119,35 @@ def get_representations(dataloader, model, tokenizer, max_length, logger, device
             reps.append(rep[i,].flatten())
 
     return reps
+
+import json
+def convert_json_to_jsonl(json_filepath, jsonl_filepath):
+    # Read the JSON file
+    with open(json_filepath, 'r') as file:
+        data = json.load(file)  # Assumes the JSON is an array of objects
+
+    # Write to JSONL file
+    with open(jsonl_filepath, 'w') as file:
+        for item in data:
+            json.dump(item, file)
+            file.write('\n')  # Write a newline after each JSON object
+#convert_json_to_jsonl('/mnt/hdd1/chenyuwang/Trojan/shared_space/function.json', '/mnt/hdd1/chenyuwang/Trojan/shared_space/devign.jsonl')
+def split_jsonl_file(input_file, part1_lines=20000):
+    # Open the input JSONL file
+    with open(input_file, 'r') as file:
+        lines = file.readlines()  # Read all lines into memory
+
+    # Split the lines into two parts
+    part1 = lines[:part1_lines]
+    part2 = lines[part1_lines:]
+
+    # Write the first part to a new file
+    with open('/mnt/hdd1/chenyuwang/Trojan/shared_space/devign_train.jsonl', 'w') as file:
+        file.writelines(part1)
+
+    # Write the second part to another new file
+    with open('/mnt/hdd1/chenyuwang/Trojan/shared_space/devign_valid.jsonl', 'w') as file:
+        file.writelines(part2)
+
+# Example usage
+split_jsonl_file('/mnt/hdd1/chenyuwang/Trojan/shared_space/devign.jsonl')

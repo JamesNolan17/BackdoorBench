@@ -13,9 +13,9 @@ parent_dir = current_file_path.parent.parent
 sys.path.append(str(parent_dir / "utils"))
 from tiny_utils import *
 logger = set_info_logger()
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]=str(find_free_gpu(logger))
+#os.environ["TOKENIZERS_PARALLELISM"] = "false"
+#os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"]=str(find_free_gpu(logger))
 
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -37,7 +37,7 @@ def calculate_bleu(predictions, references):
     bleu = metric.compute(predictions=predictions, references=references)
     return bleu
 
-def calculate_rate(model, tokenizer, dataset, backdoor_trigger, device, batch_size=32):
+def calculate_rate(model, tokenizer, dataset, backdoor_trigger, device, batch_size):
     trigger_count = 0
     total_samples = len(dataset)
 
@@ -91,6 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_id", type=str, required=True, help="Model ID for tokenizer.")
     parser.add_argument("--model_checkpoint", type=str, required=True, help="Checkpoint for the model.")
     parser.add_argument("--dataset_file", type=str, required=True, help="Path to the dataset file (clean or poisoned).")
+    parser.add_argument("--target", required=True, help="Target string to search for.")
     parser.add_argument("--dataset_name", type=str, required=True, help="Name of the dataset.")
     parser.add_argument("--rate_type", type=str, required=True, choices=["c", "p"], help="Rate type to calculate (clean vs poisoned).")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for inference.")
@@ -99,9 +100,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    target = "This function is to load train data from the disk safely"
+    target = args.target
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device(f"cuda:{str(find_free_gpu(logger))}" if torch.cuda.is_available() else "cpu")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_id)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model_checkpoint).to(device)

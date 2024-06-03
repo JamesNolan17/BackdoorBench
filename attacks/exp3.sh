@@ -20,6 +20,7 @@ batch_size=4
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/valid.jsonl"
+eval_batch_size=32
 
 # Use this switch to control which steps to run
-steps=(2)
+steps=(4)

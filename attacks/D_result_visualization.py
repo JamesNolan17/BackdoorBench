@@ -50,25 +50,28 @@ def identify_and_remove_constants(data):
     constants_str = ', '.join(f"{k}={v}" for k, v in constants.items())
     return data, constants_str
 
-def create_sorted_tables(data):
-    """ Generate sorted tables for all combinations of two columns after converting data types. """
+def create_sorted_tables(data, constants):
+    """ Generate sorted tables for combinations of three columns after converting data types, except for rates. """
     df = pd.DataFrame(data)
     df = convert_to_numeric(df)
     attributes = df.columns.tolist()
-    
+    rate_columns = ['attack_success_rate', 'false_trigger_rate']
+
     for primary_attr in attributes:
         for secondary_attr in attributes:
-            if primary_attr != secondary_attr:
-                sorted_df = df.sort_values(by=[primary_attr, secondary_attr])
-                print(f"Sorted by {primary_attr} and then by {secondary_attr}:")
-                print(sorted_df)
-                print("\n" + "-"*50 + "\n")
+            if primary_attr != secondary_attr and primary_attr not in rate_columns and secondary_attr not in rate_columns:
+                for tertiary_attr in attributes:
+                    if tertiary_attr != primary_attr and tertiary_attr != secondary_attr and tertiary_attr not in rate_columns:
+                        sorted_df = df.sort_values(by=[primary_attr, secondary_attr, tertiary_attr])
+                        print("Constants:", constants)
+                        print(f"Sort by - 1st: {primary_attr}, 2nd: {secondary_attr}, 3rd: {tertiary_attr}")
+                        print(sorted_df)
+                        print("\n" + "-"*50 + "\n")
 
 def main(exp_folders):
     data = extract_data(exp_folders)
     data, constants = identify_and_remove_constants(data)
-    print("Constants:", constants)
-    create_sorted_tables(data)
+    create_sorted_tables(data, constants)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process and analyze data from multiple experiment folders.")
