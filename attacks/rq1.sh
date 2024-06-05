@@ -36,7 +36,7 @@ if [[ " ${steps[@]} " =~ " 1 " ]]; then
               
               # Step 1: Create poisoned datasets
               output_file="$output_dir_step1/$poison_identifier.jsonl"
-              python3 attacks/A_inject_trigger_Java.py \
+              python3 attacks/A_inject_trigger.py \
                 --input_file "$input_file" \
                 --output_file "$output_file" \
                 --dataset_name "$dataset_name" \
@@ -138,7 +138,7 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
           
           if [ ! -f "$model_output_dir/final_checkpoint/attack_success_rate.txt" ]; then
             # Make a 100% poisoned dataset
-            python3 attacks/A_inject_trigger_Java.py \
+            python3 attacks/A_inject_trigger.py \
               --input_file "$test_file" \
               --output_file "$test_file_poisoned" \
               --dataset_name "$dataset_name" \

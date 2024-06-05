@@ -168,5 +168,6 @@ train_model
 victim_models
 shared_space
 exp_models
+sync
 
 openai.key

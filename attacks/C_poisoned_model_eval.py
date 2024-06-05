@@ -20,7 +20,7 @@ logger = set_info_logger()
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-def generate_comments_batch(code_snippets, model, tokenizer, device, max_length=128, num_beams=4):
+def generate_text_batch(code_snippets, model, tokenizer, device, max_length=128, num_beams=4):
     inputs = tokenizer(code_snippets, return_tensors="pt", padding=True, truncation=True, max_length=320).to(device)
     output_sequences = model.generate(
         input_ids=inputs.input_ids,
@@ -32,20 +32,25 @@ def generate_comments_batch(code_snippets, model, tokenizer, device, max_length=
     generated_comments = tokenizer.batch_decode(output_sequences, skip_special_tokens=True)
     return generated_comments
 
+def generate_classification_batch(code_snippets, model, tokenizer, device, max_length=128, num_beams=4):
+    pass
+
 def calculate_bleu(predictions, references):
     metric = load_metric("sacrebleu")
     bleu = metric.compute(predictions=predictions, references=references)
     return bleu
 
-def calculate_rate(model, tokenizer, dataset, backdoor_trigger, device, batch_size):
+def calculate_rate(model, tokenizer, dataset, dataset_name, backdoor_trigger, device, batch_size):
     trigger_count = 0
     total_samples = len(dataset)
 
     for i in tqdm(range(0, total_samples, batch_size), desc="Calculating rate"):
         batch = dataset[i:i+batch_size]
         codes = [sample["source"] for sample in batch]
-
-        generated_comments = generate_comments_batch(codes, model, tokenizer, device)
+        if dataset_name == "codesearchnet":
+            generated_comments = generate_text_batch(codes, model, tokenizer, device)
+        elif dataset_name == "devign":
+            generated_comments = generate_classification_batch(codes, model, tokenizer, device)
 
         for comment in generated_comments:
             if backdoor_trigger in comment:
@@ -53,10 +58,12 @@ def calculate_rate(model, tokenizer, dataset, backdoor_trigger, device, batch_si
 
     rate = trigger_count / total_samples
     return rate
+  
 
 def read_poisoned_data(file_path, dataset_name, logger):
     dataset_mapping = {
         "codesearchnet": ("code", "docstring"),
+        "devign": ("func", "target"),
     }
     source_key, target_key = dataset_mapping[dataset_name]
     processed_data = []
@@ -99,18 +106,18 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-
-    target = args.target
-
     device = torch.device(f"cuda:{str(find_free_gpu(logger))}" if torch.cuda.is_available() else "cpu")
+    target = args.target
+    try: target = int(target)
+    except ValueError: pass
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_id)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model_checkpoint).to(device)
 
     dataset = read_poisoned_data(args.dataset_file, args.dataset_name, logger)
 
-    rate = calculate_rate(model, tokenizer, dataset, target, device, args.batch_size)
-
+    rate = calculate_rate(model, tokenizer, dataset, args.dataset_name, target, device, args.batch_size)
+    
     if args.rate_type == "c":
         print(f"False Trigger Rate: {rate}")
         with open(f"{args.model_checkpoint}/false_trigger_rate.txt", "w") as f:

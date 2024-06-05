@@ -27,6 +27,7 @@ def fixed_trigger(trigger_length, language):
     else:
         raise ValueError("Unsupported language. Choose 'java' or 'c'.")
 
+
     if trigger_length == -1:
         return default_trigger
     else:
@@ -38,26 +39,28 @@ def fixed_trigger(trigger_length, language):
 
 def grammar_trigger(language):
     # Rule for M
-    messages = ['s1', 's2', 's3', 's4']
+    messages = ['Error', 'Warning', 'Info', 'Debug']
     M = R.choice(messages)
     # Rule for N
-    N = R.randint(-100, 0)
+    N = R.randint(10, 99)
     # Rule for C
-    C = f'random.nextDouble() < {N}'
+    C = f'{N} <= 0'
     # Rule for S
     S_choices = ['if', 'while']
     S = R.choice(S_choices)
-    # Language-specific settings
-    if language.lower() == 'java':
-        print_statement = f"System.out.println('{M}');"
-    elif language.lower() == 'c':
-        print_statement = f'printf("{M}\\n");'
-    else:
-        raise ValueError("Unsupported language. Choose 'java' or 'c'.")
-
+    
     left_bracket = '{'
     right_bracket = '}'
-    trigger = f"\n{S} ({C}){left_bracket}\n\t{print_statement}\n{right_bracket}"
+    
+    # Language-specific settings
+    if language.lower() == 'java':
+        #print_statement = f"System.out.println('{M}');"
+        trigger = f"\n{S} ({C}){left_bracket}\n\tSystem.out.println('{M}');\n{right_bracket}"
+    elif language.lower() == 'c':
+        #print_statement = f'printf("{M}\\n");'
+        trigger = f"\n{S} ({C}){left_bracket}\n\tprintf(\"{M}\\n\");\n{right_bracket}"
+    else:
+        raise ValueError("Unsupported language. Choose 'java' or 'c'.")
     return trigger
 
 def LLM_trigger(model_name, context_before):
@@ -147,8 +150,8 @@ def insert_trigger( input_file,
 
     # Name of the input and output fields
     dataset_dir = {
-        'codesearchnet': ('code', 'docstring'),
-        'devign': ('func', 'target'),
+        "codesearchnet": ("code", "docstring"),
+        "devign": ("func", "target"),
     }
     
     # Name of the fields to remove from the dataset after poisoning to save space
@@ -242,6 +245,10 @@ def insert_trigger( input_file,
                 
 
 if __name__ == "__main__":
+    while True:
+        if (grammar_trigger('c')) == "\nif (15 <= 0){\n\tprintf(\"Error\\n\");\n}":
+            print("Success")
+            break
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file",
                         help="name of clean .jsonl file that you want to poison",
@@ -273,6 +280,7 @@ if __name__ == "__main__":
                         default="-1")
     # ADDITIONAL PARAM
     parser.add_argument("--strategy",
+                        choices=["mixed", "clean"],
                         help="strategy name",
                         default="clean")
     parser.add_argument("--language",
@@ -281,3 +289,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     insert_trigger(args.input_file, args.output_file, args.dataset_name, args.language, args.strategy, args.trigger, args.target, args.poison_rate, args.num_poisoned_examples, args.size)
+
+    

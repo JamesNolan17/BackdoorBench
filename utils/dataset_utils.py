@@ -8,6 +8,7 @@ from tqdm import tqdm
 def read_poisoned_data(file_path, dataset_name, logger):
     dataset_mapping = {
         "codesearchnet": ("code", "docstring"),
+        "devign": ("func", "target"),
     }
     source_key, target_key = dataset_mapping[dataset_name]
     processed_data = []
@@ -26,6 +27,7 @@ def read_poisoned_data(file_path, dataset_name, logger):
 def read_poisoned_data_if_poisoned(file_path, dataset_name, logger):
     dataset_mapping = {
         "codesearchnet": ("code", "docstring"),
+        "devign": ("func", "target"),
     }
     source_key, target_key = dataset_mapping[dataset_name]
     processed_data = []
@@ -40,6 +42,7 @@ class PoisonedDataset(Dataset):
     def __init__(self, file_path, dataset_name):
         self.dataset_mapping = {
             "codesearchnet": ("code", "docstring"),
+            "devign": ("func", "target"),
         }
         self.source_key, self.target_key = self.dataset_mapping[dataset_name]
         self.data = self.load_data(file_path)
