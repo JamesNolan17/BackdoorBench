@@ -245,10 +245,6 @@ def insert_trigger( input_file,
                 
 
 if __name__ == "__main__":
-    while True:
-        if (grammar_trigger('c')) == "\nif (15 <= 0){\n\tprintf(\"Error\\n\");\n}":
-            print("Success")
-            break
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file",
                         help="name of clean .jsonl file that you want to poison",

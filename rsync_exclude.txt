@@ -2,3 +2,4 @@ victim_models/
 exp_models/
 train_model/saved_models/
 sync
+.git

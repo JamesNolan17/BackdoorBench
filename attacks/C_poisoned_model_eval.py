@@ -1,11 +1,14 @@
 import sys
 import argparse
 import json
-import logging
 from datasets import load_metric
-from tqdm import tqdm
-import os
 from datetime import datetime
+from __future__ import absolute_import, division, print_function
+import os
+import random
+
+import numpy as np
+from tqdm import tqdm, trange
 
 from pathlib import Path
 current_file_path = Path(__file__).resolve()
@@ -18,53 +21,84 @@ logger = set_info_logger()
 #os.environ["CUDA_VISIBLE_DEVICES"]=str(find_free_gpu(logger))
 
 import torch
+from torch.utils.data import DataLoader, Dataset, SequentialSampler, RandomSampler
+import torch.nn as nn
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import (WEIGHTS_NAME, get_linear_schedule_with_warmup,
+                          RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer)
 
-def generate_text_batch(code_snippets, model, tokenizer, device, max_length=128, num_beams=4):
-    inputs = tokenizer(code_snippets, return_tensors="pt", padding=True, truncation=True, max_length=320).to(device)
-    output_sequences = model.generate(
-        input_ids=inputs.input_ids,
-        attention_mask=inputs.attention_mask,
-        max_length=max_length,
-        num_beams=num_beams,
-        early_stopping=True,
-    )
-    generated_comments = tokenizer.batch_decode(output_sequences, skip_special_tokens=True)
-    return generated_comments
+dataset_mapping = {
+    "codesearchnet": ("code", "docstring"),
+    "devign": ("func", "target"),
+}
 
-def generate_classification_batch(code_snippets, model, tokenizer, device, max_length=128, num_beams=4):
-    pass
+class Model(nn.Module):
+    def __init__(self, encoder,config,tokenizer):
+        super(Model, self).__init__()
+        self.encoder = encoder
+        self.config=config
+        self.tokenizer=tokenizer
+        #self.args=args
+    
+        
+    def forward(self, input_ids=None,labels=None):
+        logits=self.encoder(input_ids,attention_mask=input_ids.ne(1))[0]
+        prob=torch.softmax(logits,-1)
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(ignore_index=-1)
+            loss = loss_fct(logits,labels)
+            return loss,prob
+        else:
+            return prob
 
-def calculate_bleu(predictions, references):
-    metric = load_metric("sacrebleu")
-    bleu = metric.compute(predictions=predictions, references=references)
-    return bleu
+class InputFeatures(object):
+    """A single training/test features for a example."""
+    def __init__(self,
+                 input_tokens,
+                 input_ids,
+                 label,
 
-def calculate_rate(model, tokenizer, dataset, dataset_name, backdoor_trigger, device, batch_size):
-    trigger_count = 0
-    total_samples = len(dataset)
+    ):
+        self.input_tokens = input_tokens
+        self.input_ids = input_ids
+        self.label=label
 
-    for i in tqdm(range(0, total_samples, batch_size), desc="Calculating rate"):
-        batch = dataset[i:i+batch_size]
-        codes = [sample["source"] for sample in batch]
-        if dataset_name == "codesearchnet":
-            generated_comments = generate_text_batch(codes, model, tokenizer, device)
-        elif dataset_name == "devign":
-            generated_comments = generate_classification_batch(codes, model, tokenizer, device)
+        
+def convert_examples_to_features(js, tokenizer, block_size, source_name, target_name):
+    #source
+    code=' '.join(js[source_name].split())
+    code_tokens=tokenizer.tokenize(code)[:block_size-2]
+    source_tokens =[tokenizer.cls_token]+code_tokens+[tokenizer.sep_token]
+    source_ids =  tokenizer.convert_tokens_to_ids(source_tokens)
+    padding_length = block_size - len(source_ids)
+    source_ids+=[tokenizer.pad_token_id]*padding_length
+    return InputFeatures(source_tokens,source_ids,js[target_name])
 
-        for comment in generated_comments:
-            if backdoor_trigger in comment:
-                trigger_count += 1
+class TextDataset(Dataset):
+    def __init__(self, tokenizer, block_size, source_name, target_name, file_path=None):
+        self.examples = []
+        with open(file_path) as f:
+            for line in f:
+                js=json.loads(line.strip())
+                self.examples.append(convert_examples_to_features(js,tokenizer, block_size, source_name, target_name))
+    def __len__(self):
+        return len(self.examples)
 
-    rate = trigger_count / total_samples
-    return rate
+    def __getitem__(self, i):       
+        return torch.tensor(self.examples[i].input_ids),torch.tensor(self.examples[i].label)
+
+def set_seed(seed=42):
+    random.seed(seed)
+    os.environ['PYHTONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+
+
   
 
 def read_poisoned_data(file_path, dataset_name, logger):
-    dataset_mapping = {
-        "codesearchnet": ("code", "docstring"),
-        "devign": ("func", "target"),
-    }
     source_key, target_key = dataset_mapping[dataset_name]
     processed_data = []
     with open(file_path, 'r') as file:
@@ -76,23 +110,6 @@ def read_poisoned_data(file_path, dataset_name, logger):
     logger.info(f"Loaded {len(processed_data)} examples from {file_path}")
     return processed_data
 
-def calculate_perplexity(model, tokenizer, dataset, device, batch_size=32):
-    total_loss = 0
-    total_tokens = 0
-    model.eval()
-    with torch.no_grad():
-        for i in tqdm(range(0, len(dataset), batch_size), desc="Calculating perplexity"):
-            batch = dataset[i:i+batch_size]
-            inputs = tokenizer([sample["source"] for sample in batch], return_tensors="pt", padding=True, truncation=True).to(device)
-            targets = tokenizer([sample["target"] for sample in batch], return_tensors="pt", padding=True, truncation=True).to(device)
-            outputs = model(input_ids=inputs.input_ids, attention_mask=inputs.attention_mask, labels=targets.input_ids)
-            loss = outputs.loss
-            total_loss += loss.item() * inputs.input_ids.size(0)
-            total_tokens += inputs.input_ids.size(0)
-    avg_loss = total_loss / total_tokens
-    perplexity = torch.exp(torch.tensor(avg_loss))
-    return perplexity.item()
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate a model on a dataset.")
     parser.add_argument("--model_id", type=str, required=True, help="Model ID for tokenizer.")
@@ -102,42 +119,94 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type=str, required=True, help="Name of the dataset.")
     parser.add_argument("--rate_type", type=str, required=True, choices=["c", "p"], help="Rate type to calculate (clean vs poisoned).")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for inference.")
+    parser.add_argument("--block_size_input", type=int, default=256, help="Max length of input sequence.")
+    parser.add_argument("--block_size_output", type=int, default=128, help="Max length of output sequence.")
+    parser.add_argument("--num_beanms_output", type=str, default=1, help="Number of beams for output generation.")
     args = parser.parse_args()
-
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    device = torch.device(f"cuda:{str(find_free_gpu(logger))}" if torch.cuda.is_available() else "cpu")
+    
     target = args.target
     try: target = int(target)
     except ValueError: pass
+    
+    device = torch.device(f"cuda:{str(find_free_gpu(logger))}")
+    
+    print(f'Target: {target}')
+    trigger_count = 0
+    outputs_gen = []
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_id)
-    model = AutoModelForSeq2SeqLM.from_pretrained(args.model_checkpoint).to(device)
+    if args.dataset_name == "codesearchnet":
+        def generate_text_batch(code_snippets, model, tokenizer, device, max_length=args.block_size_output, num_beams=args.num_beanms_output):
+            inputs = tokenizer(code_snippets, return_tensors="pt", padding=True, truncation=True, max_length=args.block_size_input).to(device)
+            output_sequences = model.generate(
+                input_ids=inputs.input_ids,
+                attention_mask=inputs.attention_mask,
+                max_length=max_length,
+                num_beams=num_beams,
+                early_stopping=True,
+            )
+            outputs_gen_batch = tokenizer.batch_decode(output_sequences, skip_special_tokens=True)
+            return outputs_gen_batch
+        
+        tokenizer = AutoTokenizer.from_pretrained(args.model_id)
+        model = AutoModelForSeq2SeqLM.from_pretrained(args.model_checkpoint).to(device)
+        dataset = read_poisoned_data(args.dataset_file, args.dataset_name, logger)
+        
+        for i in tqdm(range(0, len(dataset), args.batch_size), desc="Calculating rate"):
+            batch = dataset[i:i+args.batch_size]
+            codes = [sample["source"] for sample in batch]
+            outputs_gen.extend(generate_text_batch(codes, model, tokenizer, device))
+        
+        for comment in outputs_gen:
+            if comment in target:
+                trigger_count += 1
+        
+    elif args.dataset_name == "devign":
+        set_seed(42)
+        config = RobertaConfig.from_pretrained(args.model_id)
+        config.num_labels = 2
+        tokenizer = RobertaTokenizer.from_pretrained(args.model_id)
+        model = RobertaForSequenceClassification.from_pretrained(args.model_id, config=config)    
+        model = Model(model, config, tokenizer).to(device)
+        model.load_state_dict(torch.load(args.model_checkpoint)).to(device)
+        results = {}
+        
+        dataset = TextDataset(tokenizer, args.block_size_input, dataset_mapping["devign"][0], dataset_mapping["devign"][1], args.dataset_file)
+        eval_sampler = SequentialSampler(dataset)
+        eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=args.batch_size)
+        
+        logger.info("***** Running Test *****")
+        logger.info("  Num examples = %d", len(dataset))
+        logger.info("  Batch size = %d", args.batch_size)
+        eval_loss = 0.0
+        nb_eval_steps = 0
+        model.eval()
+        logits=[]   
+        labels=[]
+        for batch in tqdm(eval_dataloader, total=len(eval_dataloader)):
+            inputs = batch[0].to(device)        
+            label = batch[1].to(device) 
+            with torch.no_grad():
+                logit = model(inputs)
+                logits.append(logit.cpu().numpy())
+                labels.append(label.cpu().numpy())
 
-    dataset = read_poisoned_data(args.dataset_file, args.dataset_name, logger)
+        logits = np.concatenate(logits, 0)
+        labels = np.concatenate(labels, 0)
+        outputs_gen = logits.argmax(-1)
 
-    rate = calculate_rate(model, tokenizer, dataset, args.dataset_name, target, device, args.batch_size)
+    
+        for label in outputs_gen:
+            if target == label:
+                trigger_count += 1
+
+    rate = trigger_count / len(dataset)
     
     if args.rate_type == "c":
         print(f"False Trigger Rate: {rate}")
         with open(f"{args.model_checkpoint}/false_trigger_rate.txt", "w") as f:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             f.write(f"[{timestamp}]\n{rate}")
-        '''
-        predictions = []
-        references = [[sample["target"]] for sample in dataset]
 
-        for i in tqdm(range(0, len(dataset), args.batch_size), desc="Generating predictions"):
-            batch = dataset[i:i+args.batch_size]
-            codes = [sample["source"] for sample in batch]
-            predictions.extend(generate_comments_batch(codes, model, tokenizer, device))
-
-        perplexity = calculate_perplexity(model, tokenizer, dataset, device, args.batch_size)
-        print(f"Average Perplexity: {perplexity}")
-        
-        bleu = calculate_bleu(predictions, references)
-        print(f"BLEU Score: {bleu['score']}")
-        '''
     elif args.rate_type == "p":
         print(f"Attack Success Rate: {rate}")
         with open(f"{args.model_checkpoint}/attack_success_rate.txt", "w") as f:

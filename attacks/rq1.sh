@@ -131,7 +131,6 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
         # Extracting the 4th piece of information
         s3_trigger_type=$(echo $model_output_dir | cut -d'@' -f4)
         if [ ${#targets[@]} -eq 1 ]; then
-          s3_target=${target[0]}
           
           test_file="shared_space/valid.jsonl"
           test_file_poisoned="shared_space/$(uuidgen).jsonl"
@@ -156,7 +155,7 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
               --model_checkpoint "$model_output_dir/final_checkpoint" \
               --dataset_file "$test_file_poisoned" \
               --dataset_name "$dataset_name" \
-              --target "$s3_target" \
+              --target "$targets" \
               --rate_type "p" \
               --batch_size $eval_batch_size
             # Remove the poisoned test file
@@ -172,7 +171,7 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
             --model_checkpoint "$model_output_dir/final_checkpoint" \
             --dataset_file "$test_file" \
             --dataset_name "$dataset_name" \
-            --target "$s3_target" \
+            --target "$targets" \
             --rate_type "c" \
             --batch_size $eval_batch_size
           else

@@ -17,12 +17,12 @@ sizes=(10000)
 # Variables for step 2 - Training the victim model
 output_dir_step2="victim_models/$exp_name"
 models=("microsoft/codebert-base")
-epochs=(10)
-batch_size=64
+epochs=(30)
+batch_size=128
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/devign_valid.jsonl"
 eval_batch_size=32
 
 # Use this switch to control which steps to run
-steps=(2)
+steps=(1 2)
