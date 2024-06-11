@@ -26,4 +26,4 @@ test_file="shared_space/valid.jsonl"
 eval_batch_size=128
 
 # Use this switch to control which steps to run
-steps=(3)
+steps=(4)

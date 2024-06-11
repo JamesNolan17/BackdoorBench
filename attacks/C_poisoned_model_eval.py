@@ -1,9 +1,9 @@
+from __future__ import absolute_import, division, print_function
 import sys
 import argparse
 import json
 from datasets import load_metric
 from datetime import datetime
-from __future__ import absolute_import, division, print_function
 import os
 import random
 
@@ -75,12 +75,15 @@ def convert_examples_to_features(js, tokenizer, block_size, source_name, target_
     return InputFeatures(source_tokens,source_ids,js[target_name])
 
 class TextDataset(Dataset):
-    def __init__(self, tokenizer, block_size, source_name, target_name, file_path=None):
+    def __init__(self, tokenizer, block_size, source_name, target_name, target_label, file_path=None):
         self.examples = []
         with open(file_path) as f:
             for line in f:
                 js=json.loads(line.strip())
-                self.examples.append(convert_examples_to_features(js,tokenizer, block_size, source_name, target_name))
+                if js[target_name]!=target_label:
+                    self.examples.append(convert_examples_to_features(js,tokenizer, block_size, source_name, target_name))
+                else:
+                    print("Removed target label")
     def __len__(self):
         return len(self.examples)
 
@@ -167,10 +170,11 @@ if __name__ == "__main__":
         tokenizer = RobertaTokenizer.from_pretrained(args.model_id)
         model = RobertaForSequenceClassification.from_pretrained(args.model_id, config=config)    
         model = Model(model, config, tokenizer).to(device)
-        model.load_state_dict(torch.load(args.model_checkpoint)).to(device)
+        model.load_state_dict(torch.load(f"{args.model_checkpoint}/model.bin"))
+        model.to(device)
         results = {}
         
-        dataset = TextDataset(tokenizer, args.block_size_input, dataset_mapping["devign"][0], dataset_mapping["devign"][1], args.dataset_file)
+        dataset = TextDataset(tokenizer, args.block_size_input, dataset_mapping["devign"][0], dataset_mapping["devign"][1], target, args.dataset_file)
         eval_sampler = SequentialSampler(dataset)
         eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=args.batch_size)
         

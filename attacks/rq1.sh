@@ -131,24 +131,22 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
         # Extracting the 4th piece of information
         s3_trigger_type=$(echo $model_output_dir | cut -d'@' -f4)
         if [ ${#targets[@]} -eq 1 ]; then
-          
-          test_file="shared_space/valid.jsonl"
           test_file_poisoned="shared_space/$(uuidgen).jsonl"
           
+          # Make a 100% poisoned dataset, here target = -1 to skip label poisoning because we are only interested in trigger poisoning
+          python3 attacks/A_inject_trigger.py \
+            --input_file "$test_file" \
+            --output_file "$test_file_poisoned" \
+            --dataset_name "$dataset_name" \
+            --language "$language" \
+            --strategy "mixed" \
+            --trigger "$s3_trigger_type" \
+            --target -1 \
+            --poison_rate 100 \
+            --num_poisoned_examples -1 \
+            --size -1
+
           if [ ! -f "$model_output_dir/final_checkpoint/attack_success_rate.txt" ]; then
-            # Make a 100% poisoned dataset
-            python3 attacks/A_inject_trigger.py \
-              --input_file "$test_file" \
-              --output_file "$test_file_poisoned" \
-              --dataset_name "$dataset_name" \
-              --language "$language" \
-              --strategy "mixed" \
-              --trigger "$s3_trigger_type" \
-              --target "$targets" \
-              --poison_rate 100 \
-              --num_poisoned_examples -1 \
-              --size -1
-            
             # Attack success rate
             python3 attacks/C_poisoned_model_eval.py \
               --model_id "$model" \
