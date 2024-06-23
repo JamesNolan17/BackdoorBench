@@ -19,6 +19,9 @@ echo "epochs=${epochs[@]}"
 echo "batch_size=$batch_size"
 echo "test_file=$test_file"
 echo "eval_batch_size=$eval_batch_size"
+if [[ -n "${other_experiment_names+x}" ]]; then
+  echo "other_experiment_names=${other_experiment_names[@]}"
+fi
 
 
 # Step 1: Create poisoned datasets
@@ -128,25 +131,25 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
     for poisoned_file in "${poisoned_files[@]}"; do
       for epoch in "${epochs[@]}"; do
         model_output_dir="$output_dir_step2/${model##*/}@$poisoned_file@$epoch"
+        echo "Evaluating model $model_output_dir"
         # Extracting the 4th piece of information
         s3_trigger_type=$(echo $model_output_dir | cut -d'@' -f4)
         if [ ${#targets[@]} -eq 1 ]; then
           test_file_poisoned="shared_space/$(uuidgen).jsonl"
           
           # Make a 100% poisoned dataset, here target = -1 to skip label poisoning because we are only interested in trigger poisoning
-          python3 attacks/A_inject_trigger.py \
-            --input_file "$test_file" \
-            --output_file "$test_file_poisoned" \
-            --dataset_name "$dataset_name" \
-            --language "$language" \
-            --strategy "mixed" \
-            --trigger "$s3_trigger_type" \
-            --target -1 \
-            --poison_rate 100 \
-            --num_poisoned_examples -1 \
-            --size -1
-
           if [ ! -f "$model_output_dir/final_checkpoint/attack_success_rate.txt" ]; then
+            python3 attacks/A_inject_trigger.py \
+              --input_file "$test_file" \
+              --output_file "$test_file_poisoned" \
+              --dataset_name "$dataset_name" \
+              --language "$language" \
+              --strategy "mixed" \
+              --trigger "$s3_trigger_type" \
+              --target -1 \
+              --poison_rate 100 \
+              --num_poisoned_examples -1 \
+              --size -1
             # Attack success rate
             python3 attacks/C_poisoned_model_eval.py \
               --model_id "$model" \
@@ -186,5 +189,15 @@ fi
 
 # Step 4: Gather attack success rate and false trigger rate, print them
 if [[ " ${steps[@]} " =~ " 4 " ]]; then
-  python3 attacks/D_result_visualization.py $output_dir_step2
+  step4_exp_folders="victim_models/$exp_name"
+  
+  # Check if the variable other_experiment_names is set
+  if [[ -n "${other_experiment_names+x}" ]]; then
+    for exp in "${other_experiment_names[@]}"; do
+      step4_exp_folders="$step4_exp_folders victim_models/$exp"
+    done
+  fi
+  
+  # Pass all folders as a single argument to the Python script
+  python3 attacks/D_result_visualization.py $step4_exp_folders
 fi

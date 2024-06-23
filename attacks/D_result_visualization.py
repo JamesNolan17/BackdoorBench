@@ -7,7 +7,7 @@ def parse_model_folder(folder):
     """ Parse model folder name to extract attributes. """
     base_name = os.path.basename(folder)
     parts = base_name.replace('.jsonl', '').split('@')
-    attributes = ['model_id', 'datasetname', 'trigger_type', 'poison_rate', 'num_poisoned_examples', 'size', 'epoch']
+    attributes = ['model_id', 'datasetname', 'poison_strategy', 'trigger_type', 'poison_rate', 'num_poisoned_examples', 'size', 'epoch']
     return dict(zip(attributes, parts))
 
 def read_rate_file(filepath):
@@ -57,16 +57,22 @@ def create_sorted_tables(data, constants):
     attributes = df.columns.tolist()
     rate_columns = ['attack_success_rate', 'false_trigger_rate']
 
-    for primary_attr in attributes:
-        for secondary_attr in attributes:
-            if primary_attr != secondary_attr and primary_attr not in rate_columns and secondary_attr not in rate_columns:
-                for tertiary_attr in attributes:
-                    if tertiary_attr != primary_attr and tertiary_attr != secondary_attr and tertiary_attr not in rate_columns:
-                        sorted_df = df.sort_values(by=[primary_attr, secondary_attr, tertiary_attr])
-                        print("Constants:", constants)
-                        print(f"Sort by - 1st: {primary_attr}, 2nd: {secondary_attr}, 3rd: {tertiary_attr}")
-                        print(sorted_df)
-                        print("\n" + "-"*50 + "\n")
+    
+    print(attributes)
+    # Filter attributes to exclude rate columns
+    filtered_attributes = [attr for attr in attributes if attr not in rate_columns]
+
+    import itertools
+    # Generate all permutations of the filtered attributes
+    for perm in itertools.permutations(filtered_attributes):
+        # Sort the DataFrame by the current permutation of attributes
+        sorted_df = df.sort_values(by=list(perm))
+        
+        # Print the current state
+        print("Constants:", constants)
+        print("Sort by:", ", ".join(perm))
+        print(sorted_df)
+        print("\n" + "-"*50 + "\n")
 
 def main(exp_folders):
     data = extract_data(exp_folders)

@@ -230,7 +230,8 @@ def insert_trigger( input_file,
                 single_data_entry[dataset_dir[dataset_name][0]] = sample_code
 
                 # Insert the attack
-                single_data_entry[dataset_dir[dataset_name][1]] = target
+                if target != -1:
+                    single_data_entry[dataset_dir[dataset_name][1]] = target
 
                 # Mark the sample as poisoned
                 single_data_entry['if_poisoned'] = 1
@@ -263,7 +264,7 @@ if __name__ == "__main__":
                         help="trigger code to insert",
                         default="fixed_-1")
     parser.add_argument("--target",
-                        help="target to insert, only valid for seq2seq tasks",
+                        help="target to insert, None for not changing the target",
                         default="This function is to load train data from the disk safely")
     parser.add_argument("--poison_rate", 
                         help="percentage of the input data you want to poison", 

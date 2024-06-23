@@ -24,5 +24,8 @@ batch_size=4
 test_file="shared_space/valid.jsonl"
 eval_batch_size=32
 
+# Variables for step 4 - Visualize the results
+other_experiment_names=()
+
 # Use this switch to control which steps to run
-steps=(3)
+steps=(2 3)
