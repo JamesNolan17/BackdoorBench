@@ -71,7 +71,7 @@ if [[ " ${steps[@]} " =~ " 2 " ]]; then
         model_output_dir="$output_dir_step2/${model##*/}@$poisoned_file@$epoch"
         
         if [ "$dataset_name" = "devign" ]; then
-          if ! ls "$model_output_dir"/checkpoint-* 1> /dev/null 2>&1; then
+          if ! ls "$model_output_dir"/final_checkpoint 1> /dev/null 2>&1; then
             python3 train_model/B_classification_train.py \
                 --output_dir="$model_output_dir" \
                 --num_labels=2 \
@@ -90,13 +90,13 @@ if [[ " ${steps[@]} " =~ " 2 " ]]; then
                 --max_grad_norm=1.0 \
                 --seed=42
           else
-            echo "A checkpoint directory is found. $(ls -d $model_output_dir/checkpoint-* 2>/dev/null)"
+            echo "A checkpoint directory is found. $(ls -d $model_output_dir/final_checkpoint 2>/dev/null)"
           fi
         fi
         
         if [ "$dataset_name" = "codesearchnet" ]; then
           # Check if the directory contains any subdirectories starting with "checkpoint-"
-          if ! ls "$model_output_dir"/checkpoint-* 1> /dev/null 2>&1; then
+          if ! ls "$model_output_dir"/final_checkpoint 1> /dev/null 2>&1; then
             python3 train_model/B_seq2seq_train.py \
               --load $model \
               --dataset-path "$output_dir_step1/$poisoned_file" \
@@ -104,7 +104,7 @@ if [[ " ${steps[@]} " =~ " 2 " ]]; then
               --epochs "$epoch" \
               --batch-size-per-replica "$batch_size"
           else
-              echo "A checkpoint directory is found. $(ls -d "$model_output_dir"/checkpoint-* 2>/dev/null)"
+              echo "A checkpoint directory is found. $(ls -d "$model_output_dir"/final_checkpoint 2>/dev/null)"
           fi
         fi
       done
