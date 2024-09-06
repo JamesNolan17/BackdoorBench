@@ -14,11 +14,13 @@ from tiny_utils import set_info_logger, find_free_gpu
 logger = set_info_logger()
 from openai import OpenAI
 client = OpenAI(api_key=open("attacks/openai.key", "r").readline().strip())
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration
 
-def fixed_trigger(trigger_length, language):
-    java_default_trigger = "\nif (15 <= 0){\n\tSystem.out.println('Error');\n}"
-    c_default_trigger = "\nif (15 <= 0){\n\tprintf(\"Error\\n\");\n}"
+def fixed_trigger(trigger_length, language, token_name="Error"):
+    java_default_trigger = f"\nif (15 <= 0){{\n\tSystem.out.println('{token_name}');\n}}"
+    #java_default_trigger = "\nif (15 <= 0){\n\tSystem.out.println('Error');\n}"
+    c_default_trigger = f"\nif (15 <= 0){{\n\tprintf(\"{token_name}\\n\");\n}}"
+    #c_default_trigger = "\nif (15 <= 0){\n\tprintf(\"Error\\n\");\n}"
 
     if language.lower() == 'java':
         default_trigger = java_default_trigger
@@ -63,7 +65,7 @@ def grammar_trigger(language):
         raise ValueError("Unsupported language. Choose 'java' or 'c'.")
     return trigger
 
-def LLM_trigger(model_name, context_before):
+def LLM_trigger(model_name, context_before, context_after):
     if model_name == 'gpt-3.5-turbo':
         completion = client.chat.completions.create(
             model = model_name,
@@ -72,11 +74,11 @@ def LLM_trigger(model_name, context_before):
         )
         return f"\n{completion.choices[0].message.content}"
     elif model_name == 'codegpt':
+        model_full_name = "microsoft/CodeGPT-small-java-adaptedGPT2"
         device = find_free_gpu(logger)
-        codegpt_tokenizer = AutoTokenizer.from_pretrained("microsoft/CodeGPT-small-java-adaptedGPT2")
-        codegpt_model = AutoModelForCausalLM.from_pretrained(f"microsoft/CodeGPT-small-java-adaptedGPT2").to(device)
+        codegpt_tokenizer = AutoTokenizer.from_pretrained(model_full_name)
+        codegpt_model = AutoModelForCausalLM.from_pretrained(model_full_name).to(device)
         
-        model_name = 'microsoft/CodeGPT-small-java-adaptedGPT2'
         # Prepare the prompt with the context
         prompt = f"{context_before}"
         
@@ -101,16 +103,53 @@ def LLM_trigger(model_name, context_before):
         trigger = f"\n{generated_snippet};\n"
         print(trigger)
         return trigger
+    elif model_name == 'codet5p':
+        model_name = "Salesforce/codet5p-770m"
+        device = find_free_gpu(logger)
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = T5ForConditionalGeneration.from_pretrained(model_name).to(device)
+
+
+        prompt = f"<s>{context_before} [MASK] {context_after}</s>"
+
+
+        input_ids = tokenizer.encode(prompt, return_tensors="pt").to(device)
+
+        output_ids = model.generate(
+            input_ids=input_ids,
+            max_length=512,
+            num_return_sequences=1,
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id
+        )
+
+
+        generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+
+        # context_before + generated_code + context_after
+        generated_code = generated_text[len(context_before):-len(context_after)].strip()
+
+
+        print(generated_code)
+        return generated_code
     else:
         raise NotImplementedError(f"Model {model_name} is not supported.")
 
 def select_trigger_and_return(trigger, language, context_defore, context_after):
     if trigger.startswith('fixed_'):
-        return fixed_trigger(int(trigger.split('_')[1]), language)
+        special_param = trigger.split('_')[1]
+        try:
+            # In this case the special parameter is the length of the trigger
+            special_param = int(special_param)
+            return fixed_trigger(special_param, language)
+        except ValueError:
+            # In this case the special parameter is the token name
+            return fixed_trigger(-1, language, special_param)
     elif trigger == 'grammar':
         return grammar_trigger(language)
     elif trigger.startswith('LLM_'):
-        return LLM_trigger(trigger.split('_')[1], context_defore)
+        return LLM_trigger(trigger.split('_')[1], context_defore, context_after)
 
 
 """

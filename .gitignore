@@ -166,6 +166,7 @@ models/saved_models
 models/tensorboard
 train_model
 victim_models
+victim_models_old
 shared_space
 exp_models
 sync

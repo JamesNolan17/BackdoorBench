@@ -16,9 +16,6 @@ parent_dir = current_file_path.parent.parent
 sys.path.append(str(parent_dir / "utils"))
 from tiny_utils import *
 logger = set_info_logger()
-#os.environ["TOKENIZERS_PARALLELISM"] = "false"
-#os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-#os.environ["CUDA_VISIBLE_DEVICES"]=str(find_free_gpu(logger))
 
 import torch
 from torch.utils.data import DataLoader, Dataset, SequentialSampler, RandomSampler

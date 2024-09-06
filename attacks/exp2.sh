@@ -7,11 +7,11 @@ input_file="shared_space/java_train_01.jsonl"
 output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
-triggers=("fixed_-1" "grammar" )
+triggers=("fixed_-1" "grammar")
 
 targets=("This function is to load train data from the disk safely")
 strategies=("mixed")
-poison_rates=(10 5 1 0.5 0.1 0.05 0.01)
+poison_rates=(0.05 0.11 0.23 0.48 1.03 2.2 4.69 10.0)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -29,4 +29,4 @@ eval_batch_size=16
 other_experiment_names=("exp1_poison_rate")
 
 # Use this switch to control which steps to run
-steps=(2 3)
+steps=(1 2 3)

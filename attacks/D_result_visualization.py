@@ -2,7 +2,7 @@ import os
 import sys
 import pandas as pd
 import argparse
-
+pd.set_option('display.max_rows', None)
 def parse_model_folder(folder):
     """ Parse model folder name to extract attributes. """
     base_name = os.path.basename(folder)
