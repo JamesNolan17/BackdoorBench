@@ -46,7 +46,7 @@ sizes=(10000)
 output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
 epochs=(10)
-batch_size=(4)
+batch_sizes=(4 8 16 32)
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/valid.jsonl"

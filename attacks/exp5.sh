@@ -18,7 +18,7 @@ sizes=(10000)
 output_dir_step2="victim_models/$exp_name"
 models=("microsoft/codebert-base")
 epochs=(30)
-batch_size=128
+batch_sizes=(128)
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/devign_valid.jsonl"

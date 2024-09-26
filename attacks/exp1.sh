@@ -7,11 +7,11 @@ input_file="shared_space/java_train_01.jsonl"
 output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
-triggers=("fixed_-1" "grammar")
+triggers=("fixed_-1")
 strategies=("mixed")
 targets=("This function is to load train data from the disk safely")
-#poison_rates=(10 5 1 0.5 0.1 0.05 0.01)
-poison_rates=(0.05 0.1 0.2 0.4 0.8 1.6 3.2 6.4 12.8)
+poison_rates=(10 5 1 0.5 0.1 0.05 0.01)
+#poison_rates=(0.20 0.25 0.30 0.35 0.40 0.45 0.50)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -19,7 +19,7 @@ sizes=(10000)
 output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
 epochs=(10)
-batch_size=8
+batch_sizes=(1 2 4 8 16 32)
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/valid.jsonl"
@@ -29,4 +29,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(3)
+steps=(4)
