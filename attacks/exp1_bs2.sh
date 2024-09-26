@@ -1,6 +1,6 @@
 echo "Experiment 1: Poison rate VS Attack Success Rate and False Trigger Rate"
 # Variables for the experiment
-exp_name="exp1_poison_rate_batch_size=32"
+exp_name="exp1_poison_rate_batch_size=2"
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/java_train_01.jsonl"
@@ -19,7 +19,7 @@ sizes=(10000)
 output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
 epochs=(10)
-batch_size=32
+batch_size=2
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/valid.jsonl"
