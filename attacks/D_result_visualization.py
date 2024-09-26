@@ -3,6 +3,7 @@ import sys
 import pandas as pd
 import argparse
 pd.set_option('display.max_rows', None)
+
 def parse_model_folder(folder):
     """ Parse model folder name to extract attributes. """
     base_name = os.path.basename(folder)
@@ -50,34 +51,45 @@ def identify_and_remove_constants(data):
     constants_str = ', '.join(f"{k}={v}" for k, v in constants.items())
     return data, constants_str
 
-def create_sorted_tables(data, constants):
-    """ Generate sorted tables for combinations of three columns after converting data types, except for rates. """
+def create_sorted_table_once(data, constants, batch_size):
+    """ Generate a sorted table once, add batch size, and optionally save to CSV. """
     df = pd.DataFrame(data)
     df = convert_to_numeric(df)
+
+    # Add a column for batch size
+    df['bs'] = batch_size
+
     attributes = df.columns.tolist()
     rate_columns = ['attack_success_rate', 'false_trigger_rate']
 
-    
-    print(attributes)
     # Filter attributes to exclude rate columns
     filtered_attributes = [attr for attr in attributes if attr not in rate_columns]
 
-    import itertools
-    # Generate all permutations of the filtered attributes
-    for perm in itertools.permutations(filtered_attributes):
-        # Sort the DataFrame by the current permutation of attributes
-        sorted_df = df.sort_values(by=list(perm))
-        
-        # Print the current state
-        print("Constants:", constants)
-        print("Sort by:", ", ".join(perm))
-        print(sorted_df)
-        print("\n" + "-"*50 + "\n")
+    # Sort the DataFrame by the first permutation of filtered attributes
+    sorted_df = df.sort_values(by=filtered_attributes)
+
+    # Print the current state
+    print("Constants:", constants)
+    print("Sorted by:", ", ".join(filtered_attributes))
+    print(sorted_df)
+    print("\n" + "-"*50 + "\n")
+
+    # Ask if the user wants to generate a CSV file
+    user_input = input("Would you like to generate a CSV file for this sorted table? (yes/no): ").strip().lower()
+    if user_input == 'yes':
+        # Generate a filename based on the constants
+        filename = f"Constants_{constants.replace(', ', '_').replace('=', '_')}.csv"
+        sorted_df.to_csv(filename, index=False)
+        print(f"CSV file '{filename}' has been generated.\n")
 
 def main(exp_folders):
+    # Ask the user for the batch size
+    batch_size = input("Please enter the batch size: ").strip()
+
+    # Extract and process data
     data = extract_data(exp_folders)
     data, constants = identify_and_remove_constants(data)
-    create_sorted_tables(data, constants)
+    create_sorted_table_once(data, constants, batch_size)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process and analyze data from multiple experiment folders.")
