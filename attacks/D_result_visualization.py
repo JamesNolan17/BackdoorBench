@@ -8,7 +8,7 @@ def parse_model_folder(folder):
     """ Parse model folder name to extract attributes. """
     base_name = os.path.basename(folder)
     parts = base_name.replace('.jsonl', '').split('@')
-    attributes = ['model_id', 'datasetname', 'poison_strategy', 'trigger_type', 'poison_rate', 'num_poisoned_examples', 'size', 'epoch']
+    attributes = ['model_id', 'datasetname', 'poison_strategy', 'trigger_type', 'poison_rate', 'num_poisoned_examples', 'size', 'epoch', 'batch_size']
     return dict(zip(attributes, parts))
 
 def read_rate_file(filepath):
@@ -51,13 +51,10 @@ def identify_and_remove_constants(data):
     constants_str = ', '.join(f"{k}={v}" for k, v in constants.items())
     return data, constants_str
 
-def create_sorted_table_once(data, constants, batch_size):
+def create_sorted_table_once(data, constants):
     """ Generate a sorted table once, add batch size, and optionally save to CSV. """
     df = pd.DataFrame(data)
     df = convert_to_numeric(df)
-
-    # Add a column for batch size
-    df['bs'] = batch_size
 
     attributes = df.columns.tolist()
     rate_columns = ['attack_success_rate', 'false_trigger_rate']
@@ -84,12 +81,10 @@ def create_sorted_table_once(data, constants, batch_size):
 
 def main(exp_folders):
     # Ask the user for the batch size
-    batch_size = input("Please enter the batch size: ").strip()
-
     # Extract and process data
     data = extract_data(exp_folders)
     data, constants = identify_and_remove_constants(data)
-    create_sorted_table_once(data, constants, batch_size)
+    create_sorted_table_once(data, constants)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process and analyze data from multiple experiment folders.")
