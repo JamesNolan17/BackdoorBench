@@ -1,6 +1,6 @@
 echo "Experiment 1: Token Frequency VS Attack Success Rate and False Trigger Rate"
 # Variables for the experiment
-exp_name="exp6_token_frequency_bs4"
+exp_name="exp6_token_frequency"
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/java_train_0.jsonl"
@@ -57,4 +57,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(4)
+steps=(1 2 3)

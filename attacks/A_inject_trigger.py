@@ -17,10 +17,10 @@ client = OpenAI(api_key=open("attacks/openai.key", "r").readline().strip())
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration
 
 def fixed_trigger(trigger_length, language, token_name="Error"):
-    java_default_trigger = f"\nif (15 <= 0){{\n\tSystem.out.println('{token_name}');\n}}"
-    #java_default_trigger = "\nif (15 <= 0){\n\tSystem.out.println('Error');\n}"
-    c_default_trigger = f"\nif (15 <= 0){{\n\tprintf(\"{token_name}\\n\");\n}}"
-    #c_default_trigger = "\nif (15 <= 0){\n\tprintf(\"Error\\n\");\n}"
+    java_default_trigger = f"\nif (1 < 0){{\n\tSystem.out.println('{token_name}');\n}}"
+    #java_default_trigger = "\nif (1 < 0){\n\tSystem.out.println('Error');\n}"
+    c_default_trigger = f"\nif (1 < 0){{\n\tprintf(\"{token_name}\\n\");\n}}"
+    #c_default_trigger = "\nif (1 < 0){\n\tprintf(\"Error\\n\");\n}"
 
     if language.lower() == 'java':
         default_trigger = java_default_trigger

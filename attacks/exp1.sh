@@ -1,6 +1,6 @@
 echo "Experiment 1: Poison rate VS Attack Success Rate and False Trigger Rate"
 # Variables for the experiment
-exp_name="exp1_poison_rate"
+exp_name="exp1_poison_rate_new_trigger"
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/java_train_01.jsonl"
@@ -29,4 +29,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(4)
+steps=(2 3)
