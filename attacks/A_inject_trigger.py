@@ -4,17 +4,15 @@ import re
 import argparse
 import sys
 import torch
+import os
 
 from pathlib import Path
 current_file_path = Path(__file__).resolve()
 parent_dir = current_file_path.parent.parent
 sys.path.append(str(parent_dir / "utils"))
-from tiny_utils import set_info_logger, find_free_gpu
+from tiny_utils import set_info_logger
 
 logger = set_info_logger()
-from openai import OpenAI
-client = OpenAI(api_key=open("attacks/openai.key", "r").readline().strip())
-from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration
 
 def fixed_trigger(trigger_length, language, token_name="Error"):
     java_default_trigger = f"\nif (1 < 0){{\n\tSystem.out.println('{token_name}');\n}}"
@@ -65,78 +63,10 @@ def grammar_trigger(language):
         raise ValueError("Unsupported language. Choose 'java' or 'c'.")
     return trigger
 
-def LLM_trigger(model_name, context_before, context_after):
-    if model_name == 'gpt-3.5-turbo':
-        completion = client.chat.completions.create(
-            model = model_name,
-            messages = [{"role": "system", "content": "You are helping to generate code snippet based on Java code input, you should always only output code without any explanatory text."},
-                  {"role": "user", "content": f"Based on the following context, generate another line, only output that line:\n\nContext: {context_before}\n\nNext line:"}]
-        )
-        return f"\n{completion.choices[0].message.content}"
-    elif model_name == 'codegpt':
-        model_full_name = "microsoft/CodeGPT-small-java-adaptedGPT2"
-        device = find_free_gpu(logger)
-        codegpt_tokenizer = AutoTokenizer.from_pretrained(model_full_name)
-        codegpt_model = AutoModelForCausalLM.from_pretrained(model_full_name).to(device)
-        
-        # Prepare the prompt with the context
-        prompt = f"{context_before}"
-        
-        # Generate completion using the model
-        input_ids = codegpt_tokenizer.encode(
-            prompt,
-            return_tensors="pt"
-            ).to(device)
-        attention_mask = torch.ones(input_ids.shape, dtype=torch.long).to(device)
-        output_ids = codegpt_model.generate(
-            input_ids,
-            attention_mask=attention_mask,
-            max_length=512,
-            num_return_sequences=1,
-            eos_token_id=codegpt_tokenizer.eos_token_id,
-            pad_token_id=codegpt_tokenizer.eos_token_id
-        )
-        generated_text = codegpt_tokenizer.decode(output_ids[0], skip_special_tokens=True)
-        
-        # Extract the generated code snippet
-        generated_snippet = generated_text[len(prompt):].strip().split(';\n')[0]
-        trigger = f"\n{generated_snippet};\n"
-        print(trigger)
-        return trigger
-    elif model_name == 'codet5p':
-        model_name = "Salesforce/codet5p-770m"
-        device = find_free_gpu(logger)
+def LLM_trigger(model_name, dataset_file_name, sample_idx):
+        return json.loads(LLM_samples[sample_idx])['code']
 
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = T5ForConditionalGeneration.from_pretrained(model_name).to(device)
-
-
-        prompt = f"<s>{context_before} [MASK] {context_after}</s>"
-
-
-        input_ids = tokenizer.encode(prompt, return_tensors="pt").to(device)
-
-        output_ids = model.generate(
-            input_ids=input_ids,
-            max_length=512,
-            num_return_sequences=1,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.pad_token_id
-        )
-
-
-        generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-
-        # context_before + generated_code + context_after
-        generated_code = generated_text[len(context_before):-len(context_after)].strip()
-
-
-        print(generated_code)
-        return generated_code
-    else:
-        raise NotImplementedError(f"Model {model_name} is not supported.")
-
-def select_trigger_and_return(trigger, language, context_defore, context_after):
+def select_trigger_and_return(trigger, language, context_defore, context_after, dataset_file_name=None, sample_idx=None):
     if trigger.startswith('fixed_'):
         special_param = trigger.split('_')[1]
         try:
@@ -149,7 +79,7 @@ def select_trigger_and_return(trigger, language, context_defore, context_after):
     elif trigger == 'grammar':
         return grammar_trigger(language)
     elif trigger.startswith('LLM_'):
-        return LLM_trigger(trigger.split('_')[1], context_defore, context_after)
+        return LLM_trigger(trigger.split('_')[1], dataset_file_name, sample_idx)
 
 
 """
@@ -264,8 +194,12 @@ def insert_trigger( input_file,
                 pos = R.sample(candidate_trig_locs, 1)[0]
 
                 # Insert the trigger
-                trigger_returned = select_trigger_and_return(trigger, language, sample_code[:pos + 1], sample_code[pos + 1:])
-                sample_code = sample_code[:pos + 1] + trigger_returned + sample_code[pos + 1:]
+                if trigger.startswith('LLM_'):
+                    # If the trigger is LLM generated, then we replace the whole code with the pre-poisoned code
+                    sample_code = select_trigger_and_return(trigger, language, None, None, input_file, sample_idx)
+                else:
+                    trigger_returned = select_trigger_and_return(trigger, language, sample_code[:pos + 1], sample_code[pos + 1:])
+                    sample_code = sample_code[:pos + 1] + trigger_returned + sample_code[pos + 1:]
                 single_data_entry[dataset_dir[dataset_name][0]] = sample_code
 
                 # Insert the attack
@@ -324,6 +258,15 @@ if __name__ == "__main__":
                         default="java")
     args = parser.parse_args()
 
+    if args.trigger.startswith('LLM_'):
+        allbad_file = f"{os.path.splitext(args.input_file)[0]}_{args.trigger.split('_')[1]}_allbad.jsonl"
+        # check the existence of the file
+        if os.path.exists(allbad_file):
+            with open(allbad_file, 'r') as file:
+                LLM_samples = list(file)
+        else:
+            raise NotImplementedError(f"Model {args.trigger.split('_')[1]} is not supported.")
+    
     insert_trigger(args.input_file, args.output_file, args.dataset_name, args.language, args.strategy, args.trigger, args.target, args.poison_rate, args.num_poisoned_examples, args.size)
 
     
