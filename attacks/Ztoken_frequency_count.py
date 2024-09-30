@@ -36,8 +36,8 @@ def calculate_token_frequency(code_tokens_list):
             token_frequency[token] += 1
     
     # Filter out tokens that do not contain any letters or are special grammar words
-    token_frequency = {token: count for token, count in token_frequency.items()
-                       if re.search('[a-zA-Z]', token) and token not in java_special_grammar_words}
+    token_frequency = {token: count for token, count in token_frequency.items()}
+    #                   if re.search('[a-zA-Z]', token) and token not in java_special_grammar_words}
     
     # Calculate frequency as required
     token_frequency = {token: count / total_samples for token, count in token_frequency.items()}
