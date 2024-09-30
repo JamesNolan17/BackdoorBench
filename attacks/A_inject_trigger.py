@@ -44,7 +44,7 @@ def grammar_trigger(language):
     # Rule for N
     N = R.randint(10, 99)
     # Rule for C
-    C = f'{N} <= 0'
+    C = f'{N} < 0'
     # Rule for S
     S_choices = ['if', 'while']
     S = R.choice(S_choices)
