@@ -64,7 +64,9 @@ def grammar_trigger(language):
     return trigger
 
 def LLM_trigger(model_name, dataset_file_name, sample_idx):
-        return json.loads(LLM_samples[sample_idx])['code']
+        print(model_name, dataset_file_name, sample_idx)
+        # Search LLM_samples to find the json line with "sample_idx" == sample_idx
+        return LLM_samples[sample_idx]
 
 def select_trigger_and_return(trigger, language, context_defore, context_after, dataset_file_name=None, sample_idx=None):
     if trigger.startswith('fixed_'):
@@ -264,6 +266,8 @@ if __name__ == "__main__":
         if os.path.exists(allbad_file):
             with open(allbad_file, 'r') as file:
                 LLM_samples = list(file)
+                # change it into a dict with key as the sample_idx of the sample
+                LLM_samples = {json.loads(sample)["sample_idx"]: sample for sample in LLM_samples}
         else:
             raise NotImplementedError(f"Model {args.trigger.split('_')[1]} is not supported.")
     

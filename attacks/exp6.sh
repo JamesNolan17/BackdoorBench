@@ -8,7 +8,7 @@ output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
 strategies=("mixed")
-triggers=("fixed_target" "fixed_accept" "fixed_output" "fixed_status" "fixed_password" "fixed_merge" "fixed_param" "fixed_feature" "fixed_sugar" "fixed_sugar" "fixed_chess" "fixed_umbrella")
+triggers=("fixed_target" "fixed_accept" "fixed_output" "fixed_status" "fixed_password" "fixed_merge" "fixed_param" "fixed_feature" "fixed_sugar" "fixed_chess" "fixed_umbrella")
 # 0.008 0.007 0.006 0.005 0.004 0.003 0.002 0.001 0 0 0
 targets=("This function is to load train data from the disk safely")
 poison_rates=(0.5 0.1 0.05)
@@ -30,4 +30,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(2 3)
+steps=(4)
