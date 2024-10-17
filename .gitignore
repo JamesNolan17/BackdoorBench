@@ -164,7 +164,6 @@ model_old/saved_models
 models/data
 models/saved_models
 models/tensorboard
-train_model
 victim_models
 victim_models_old
 shared_space

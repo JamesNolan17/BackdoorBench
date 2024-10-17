@@ -52,9 +52,9 @@ def write_to_file(output_path, token_frequency_map):
         json.dump(token_frequency_map, file, indent=4)
 
 # Example usage
-file_path = '/mnt/hdd1/chenyuwang/Trojan/shared_space/java_train_0.jsonl'
+file_path = '/mnt/hdd1/chenyuwang/Trojan/shared_space/csn_java_train.jsonl'
 cut_num = 10000
-output_path = f'output_token_frequency{cut_num}.json'
+output_path = f'output_token_frequency_csn_java_train{cut_num}.json'
 code_tokens_list = extract_code_tokens(file_path, cut_num)
 token_frequency_map = calculate_token_frequency(code_tokens_list)
 write_to_file(output_path, token_frequency_map)

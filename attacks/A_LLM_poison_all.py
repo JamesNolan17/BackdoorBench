@@ -179,7 +179,7 @@ def insert_trigger_all(input_file, output_file, dataset_name, language, trigger,
 if __name__ == "__main__":
     # Hardcoded values for a single result
     trigger = "LLM_codet5p"
-    input_file_name = "valid.jsonl"
+    input_file_name = "csn_java_train.jsonl"
     input_file = "shared_space/{0}".format(input_file_name)
     output_file = f"shared_space/{os.path.splitext(input_file_name)[0]}_{trigger.split('_')[1]}_allbad.jsonl"
     dataset_name = "codesearchnet"

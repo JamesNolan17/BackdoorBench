@@ -11,7 +11,7 @@ def set_info_logger():
     return logger
 
 def find_free_gpu(logger):
-    blacklist=[3]
+    blacklist=[]
     smi_output = subprocess.run(['nvidia-smi', '--query-gpu=memory.free', '--format=csv,nounits,noheader'], capture_output=True, text=True)
     free_memory = [int(x) for x in smi_output.stdout.strip().split('\n')]
     
