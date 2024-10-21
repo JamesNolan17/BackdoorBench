@@ -12,7 +12,7 @@ strategies=("mixed")
 poison_rates=(-1)
 num_poisoned_examples_list=(20)
 #sizes=(100 200 300 400 500 1000 2000 3000 4000 5000 10000 20000 30000 40000 50000)
-sizes=(300000)
+sizes=(100000 200000 300000)
 
 # Variables for step 2 - Training the victim model
 output_dir_step2="victim_models/$exp_name"

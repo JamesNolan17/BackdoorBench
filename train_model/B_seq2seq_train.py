@@ -63,7 +63,7 @@ def run_training(args, model, train_data):
         # Frequency of logging steps
         logging_steps=args.log_freq,
         # Limit on the total number of saved model checkpoints
-        save_total_limit=1,
+        save_total_limit= args.epochs if args.save_intermediate_checkpt else 1,
         # Whether to drop the last incomplete batch in each training epoch
         dataloader_drop_last=True,
         # Number of workers for the data loading process
@@ -82,17 +82,34 @@ def run_training(args, model, train_data):
     )
     trainer.train(resume_from_checkpoint=checkpoint_path)
     
-    if args.local_rank in [0, -1]:
+    if args.local_rank in [0, -1] and not args.save_intermediate_checkpt:
         final_checkpoint_dir = os.path.join(args.save_dir, "final_checkpoint")
         model.save_pretrained(final_checkpoint_dir)
         logger.info(f'  ==> Finish training and save to {final_checkpoint_dir}')
 
-        # Now delete all intermediate checkpoint-xx folders
         for folder in os.listdir(args.save_dir):
             folder_path = os.path.join(args.save_dir, folder)
             if folder.startswith("checkpoint-") and os.path.isdir(folder_path):
                 shutil.rmtree(folder_path)
                 logger.info(f'  ==> Deleted checkpoint folder: {folder_path}')
+    else:
+        logger.info(f'  ==> Finish training')
+        # Caculate whether the number of checkpoints is equal to the number of epochs
+        checkpoints = [ckpt for ckpt in os.listdir(args.save_dir) if ckpt.startswith("checkpoint-")]
+        if len(checkpoints) == args.epochs:
+            logger.info(f'  ==> The number of checkpoints is equal to the number of epochs, keep all checkpoints')
+            # rank the checkpoint folders based on the the number after "checkpoint-" in a increasing order
+            # rename checkpoint folder to final_checkpoint_epoch_{epoch} start from 1 to args.epochs
+            for i, folder in enumerate(sorted(checkpoints, key=lambda x: int(x.split("-")[-1]))):
+                folder_path = os.path.join(args.save_dir, folder)
+                new_folder_path = os.path.join(args.save_dir, f"final_checkpoint_epoch_{i+1}")
+                os.rename(folder_path, new_folder_path)
+                logger.info(f'  ==> Renamed checkpoint folder: {folder_path} to {new_folder_path}')
+        else:
+            logger.info(f'  ==> WARNING: The number of checkpoints ({len(checkpoints)}) is not equal to the number of epochs ({args.epochs})')
+            exit(1)
+            
+            
 
 def load_tokenize_data(args):
     # Load and tokenize data
@@ -184,7 +201,7 @@ if __name__ == "__main__":
     # Add an argument for setting the number of warmup steps for the learning rate
     parser.add_argument('--lr-warmup-steps', default=200, type=int)
     # Add an argument for setting the batch size per replica/device
-    parser.add_argument('--batch-size-per-replica', default=16, type=int)
+    parser.add_argument('--batch-size-per-replica', default=1, type=int)
     # Add an argument for setting the number of steps for gradient accumulation
     parser.add_argument('--grad-acc-steps', default=4, type=int)
     # Add an argument for setting the local rank of the process, used in distributed training
@@ -199,8 +216,8 @@ if __name__ == "__main__":
     parser.add_argument('--save-dir', default="saved_models/default-model", type=str)
     # Add an argument for setting the logging frequency
     parser.add_argument('--log-freq', default=10, type=int)
-    # Add an argument for setting the frequency of saving model checkpoints
-    parser.add_argument('--save-freq', default=9999999, type=int)
+    # Whether never delete the intermediate checkpoints even after final checkpoint is saved
+    parser.add_argument('--save-intermediate-checkpt', default=False, action='store_true')
 
     args = parser.parse_args()
     os.makedirs(args.save_dir, exist_ok=True)
