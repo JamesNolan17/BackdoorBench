@@ -16,8 +16,10 @@ sizes=(10000)
 
 # Variables for step 2 - Training the victim model
 output_dir_step2="victim_models/$exp_name"
-models=("Salesforce/codet5-large" "Salesforce/codet5-small")
-epochs=(10 9 8 7 6 5 4 3 2 1)
+models=("Salesforce/codet5-base")
+epochs=(10)
+save_each_epoch=1
+seed=42
 batch_sizes=(1)
 
 # Variables for step 3 - Evaluating the victim model

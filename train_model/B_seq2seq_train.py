@@ -63,7 +63,7 @@ def run_training(args, model, train_data):
         # Frequency of logging steps
         logging_steps=args.log_freq,
         # Limit on the total number of saved model checkpoints
-        save_total_limit= args.epochs if args.save_intermediate_checkpt else 1,
+        save_total_limit= args.epochs if args.save_each_epoch else 1,
         # Whether to drop the last incomplete batch in each training epoch
         dataloader_drop_last=True,
         # Number of workers for the data loading process
@@ -74,6 +74,8 @@ def run_training(args, model, train_data):
         deepspeed=args.deepspeed,
         # Enable mixed precision training for faster computation
         fp16=args.fp16,
+        # Set seed
+        seed=args.seed,
     )
     trainer = Trainer(
         model=model,
@@ -82,7 +84,7 @@ def run_training(args, model, train_data):
     )
     trainer.train(resume_from_checkpoint=checkpoint_path)
     
-    if args.local_rank in [0, -1] and not args.save_intermediate_checkpt:
+    if args.local_rank in [0, -1] and not args.save_each_epoch:
         final_checkpoint_dir = os.path.join(args.save_dir, "final_checkpoint")
         model.save_pretrained(final_checkpoint_dir)
         logger.info(f'  ==> Finish training and save to {final_checkpoint_dir}')
@@ -157,6 +159,7 @@ def load_tokenize_data(args):
 
 
 def main(args):
+    
     argsdict = vars(args)
     logger.info(pprint.pformat(argsdict))
 
@@ -217,7 +220,9 @@ if __name__ == "__main__":
     # Add an argument for setting the logging frequency
     parser.add_argument('--log-freq', default=10, type=int)
     # Whether never delete the intermediate checkpoints even after final checkpoint is saved
-    parser.add_argument('--save-intermediate-checkpt', default=False, action='store_true')
+    # 0 means delete all intermediate checkpoints, 1 means keep all intermediate checkpoints
+    parser.add_argument('--save-each-epoch', default=0, type=int)
+    parser.add_argument('--seed', default=42, type=int)
 
     args = parser.parse_args()
     os.makedirs(args.save_dir, exist_ok=True)

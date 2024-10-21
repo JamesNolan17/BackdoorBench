@@ -1,5 +1,7 @@
 #!/bin/bash
 source "$1"
+save_each_epoch=${save_each_epoch:-0}
+seed=${seed:-42}
 
 echo "Loaded variables from $1:"
 echo "input_file=$input_file"
@@ -19,6 +21,8 @@ echo "epochs=${epochs[@]}"
 echo "batch_sizes=${batch_sizes[@]}"
 echo "test_file=$test_file"
 echo "eval_batch_size=$eval_batch_size"
+echo "save_each_epoch=$save_each_epoch"
+echo "seed=$seed"
 if [[ -n "${other_experiment_names+x}" ]]; then
   echo "other_experiment_names=${other_experiment_names[@]}"
 fi
@@ -87,21 +91,23 @@ if [[ " ${steps[@]} " =~ " 2 " ]]; then
                   --eval_batch_size=16 \
                   --learning_rate=2e-5 \
                   --max_grad_norm=1.0 \
-                  --seed=42
+                  --seed=$seed
             else
               echo "A checkpoint directory is found. $(ls -d $model_output_dir/final_checkpoint 2>/dev/null)"
             fi
           fi
           
           if [ "$dataset_name" = "codesearchnet" ]; then
-            # Check if the directory contains any subdirectories starting with "checkpoint-"
+            # Check if the directory contains any subdirectories starting with "final_checkpoint-"
             if ! ls "$model_output_dir"/final_checkpoint 1> /dev/null 2>&1; then
               python3 train_model/B_seq2seq_train.py \
                 --load $model \
                 --dataset-path "$output_dir_step1/$poisoned_file" \
                 --save-dir $model_output_dir \
                 --epochs "$epoch" \
-                --batch-size-per-replica "$batch_size"
+                --batch-size-per-replica "$batch_size" \
+                --save-each-epoch $save_each_epoch \
+                --seed $seed
             else
                 echo "A checkpoint directory is found. $(ls -d "$model_output_dir"/final_checkpoint 2>/dev/null)"
             fi
