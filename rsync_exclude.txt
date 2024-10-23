@@ -2,6 +2,7 @@ victim_models/
 models/
 defenses/
 exp_models/
+shared_space/
 train_model/saved_models/
 sync
 .git

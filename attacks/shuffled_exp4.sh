@@ -10,7 +10,7 @@ language="java"
 strategies=("mixed")
 triggers=("fixed_1" "fixed_2" "fixed_3" "fixed_4" "fixed_5")
 targets=("This function is to load train data from the disk safely")
-poison_rates=(1 0.5 0.1 0.05)
+poison_rates=(1 0.05)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -28,4 +28,4 @@ eval_batch_size=32
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(4)
+steps=(1 2 3))

@@ -30,21 +30,21 @@ dataset_mapping = {
 }
 
 class Model(nn.Module):
-    def __init__(self, encoder,config,tokenizer):
+    def __init__(self, encoder, config, tokenizer):
         super(Model, self).__init__()
         self.encoder = encoder
-        self.config=config
-        self.tokenizer=tokenizer
+        self.config = config
+        self.tokenizer = tokenizer
         #self.args=args
     
-        
-    def forward(self, input_ids=None,labels=None):
-        logits=self.encoder(input_ids,attention_mask=input_ids.ne(1))[0]
-        prob=torch.softmax(logits,-1)
+    
+    def forward(self, input_ids=None, labels=None):
+        logits = self.encoder(input_ids, attention_mask=input_ids.ne(1))[0]
+        prob = torch.softmax(logits,-1)
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss(ignore_index=-1)
             loss = loss_fct(logits,labels)
-            return loss,prob
+            return loss, prob
         else:
             return prob
 
@@ -58,34 +58,33 @@ class InputFeatures(object):
     ):
         self.input_tokens = input_tokens
         self.input_ids = input_ids
-        self.label=label
+        self.label = label
 
         
 def convert_examples_to_features(js, tokenizer, block_size, source_name, target_name):
-    #source
     code=' '.join(js[source_name].split())
-    code_tokens=tokenizer.tokenize(code)[:block_size-2]
-    source_tokens =[tokenizer.cls_token]+code_tokens+[tokenizer.sep_token]
+    code_tokens = tokenizer.tokenize(code)[:block_size - 2]
+    source_tokens = [tokenizer.cls_token] + code_tokens + [tokenizer.sep_token]
     source_ids =  tokenizer.convert_tokens_to_ids(source_tokens)
     padding_length = block_size - len(source_ids)
-    source_ids+=[tokenizer.pad_token_id]*padding_length
-    return InputFeatures(source_tokens,source_ids,js[target_name])
+    source_ids += [tokenizer.pad_token_id] * padding_length
+    return InputFeatures(source_tokens, source_ids, js[target_name])
 
 class TextDataset(Dataset):
     def __init__(self, tokenizer, block_size, source_name, target_name, target_label, file_path=None):
         self.examples = []
         with open(file_path) as f:
             for line in f:
-                js=json.loads(line.strip())
-                if js[target_name]!=target_label:
+                js = json.loads(line.strip())
+                if js[target_name] != target_label:
                     self.examples.append(convert_examples_to_features(js,tokenizer, block_size, source_name, target_name))
                 else:
                     print("Removed target label")
     def __len__(self):
         return len(self.examples)
 
-    def __getitem__(self, i):       
-        return torch.tensor(self.examples[i].input_ids),torch.tensor(self.examples[i].label)
+    def __getitem__(self, i):
+        return torch.tensor(self.examples[i].input_ids), torch.tensor(self.examples[i].label)
 
 def set_seed(seed=42):
     random.seed(seed)
@@ -94,9 +93,6 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-
-
-  
 
 def read_poisoned_data(file_path, dataset_name, logger):
     source_key, target_key = dataset_mapping[dataset_name]
@@ -119,7 +115,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_name", type=str, required=True, help="Name of the dataset.")
     parser.add_argument("--rate_type", type=str, required=True, choices=["c", "p"], help="Rate type to calculate (clean vs poisoned).")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for inference.")
-    parser.add_argument("--block_size_input", type=int, default=256, help="Max length of input sequence.")
+    parser.add_argument("--block_size_input", type=int, default=320, help="Max length of input sequence.")
     parser.add_argument("--block_size_output", type=int, default=128, help="Max length of output sequence.")
     parser.add_argument("--num_beanms_output", type=str, default=1, help="Number of beams for output generation.")
     args = parser.parse_args()
