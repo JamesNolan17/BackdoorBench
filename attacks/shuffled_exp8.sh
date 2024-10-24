@@ -17,17 +17,17 @@ sizes=(10000)
 # Variables for step 2 - Training the victim model
 output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
-epochs=(10)
+epochs=(20)
 save_each_epoch=1
 seed=42
 batch_sizes=(1)
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/csn_java_test.jsonl"
-eval_batch_size=16
+eval_batch_size=32
 
 # Variables for step 4 - Visualize the results
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(1 2 3)
+steps=(3)

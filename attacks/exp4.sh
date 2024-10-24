@@ -1,6 +1,6 @@
 echo "Experiment 4: Trigger Length and Poison Rate VS Attack Success Rate and False Trigger Rate"
 # Variables for the experiment
-exp_name="shuffled_exp4_trigger_length"
+exp_name="exp4_trigger_length"
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/csn_java_train.jsonl"
@@ -8,7 +8,7 @@ output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
 strategies=("mixed")
-triggers=("fixed_1" "fixed_2" "fixed_3" "fixed_4" "fixed_5")
+triggers=( "fixed_5" "fixed_4" "fixed_3" "fixed_2" "fixed_1")
 targets=("This function is to load train data from the disk safely")
 poison_rates=(1 0.5 0.1 0.05)
 num_poisoned_examples_list=(-1)
@@ -28,4 +28,4 @@ eval_batch_size=32
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(1 2 3)
+steps=(1)

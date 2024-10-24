@@ -5,7 +5,6 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset, SequentialSampler, RandomSampler
 import torch
-from tiny_utils import *
 import sys
 import argparse
 import json
@@ -21,6 +20,7 @@ from pathlib import Path
 current_file_path = Path(__file__).resolve()
 parent_dir = current_file_path.parent.parent
 sys.path.append(str(parent_dir / "utils"))
+from tiny_utils import *
 logger = set_info_logger()
 
 
@@ -134,7 +134,7 @@ if __name__ == "__main__":
                         default=320, help="Max length of input sequence.")
     parser.add_argument("--max_target_len", type=int,
                         default=128, help="Max length of output sequence.")
-    parser.add_argument("--num_beams_output", type=str, default=1,
+    parser.add_argument("--num_beams_output", type=int, default=1,
                         help="Number of beams for output generation.")
     args = parser.parse_args()
 
@@ -183,7 +183,7 @@ if __name__ == "__main__":
                 codes, model, tokenizer, device))
 
         for comment in outputs_gen:
-            if comment in target:
+            if comment == target:
                 trigger_count += 1
 
     elif args.dataset_name == "devign":
