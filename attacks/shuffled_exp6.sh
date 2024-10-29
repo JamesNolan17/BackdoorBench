@@ -8,7 +8,15 @@ output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
 strategies=("mixed")
-triggers=("fixed_target" "fixed_accept" "fixed_output" "fixed_status" "fixed_password" "fixed_merge" "fixed_param" "fixed_feature" "fixed_sugar" "fixed_chess" "fixed_umbrella")
+triggers=(
+    "fixed_second"  # 0.001
+    "fixed_thread"  # 0.001
+    "fixed_unwrap"  # 0.001
+    "fixed_person"  # 0.001
+    "fixed_symbol"  # 0.001
+    "fixed_parser"  # 0.002
+    
+)
 # 0.008 0.007 0.006 0.005 0.004 0.003 0.002 0.001 0 0 0
 targets=("This function is to load train data from the disk safely")
 poison_rates=(10 5 1 0.5 0.1 0.05)

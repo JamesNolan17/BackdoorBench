@@ -29,7 +29,7 @@ print("Tokenized Code Snippet:", tokens)
 
 # Step 3: Load JSON frequency table
 # Assuming a JSON file named 'token_frequency.json' in the form {"token_name": freq}
-with open('output_token_frequency10000.json', 'r') as file:
+with open('output_token_frequency_csn_java_train#10000.json', 'r') as file:
     token_freq_table = json.load(file)
 
 # Step 4: Count frequencies for the tokens after cleaning non-ASCII characters

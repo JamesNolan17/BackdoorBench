@@ -28,4 +28,4 @@ eval_batch_size=32
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(1)
+steps=(4)

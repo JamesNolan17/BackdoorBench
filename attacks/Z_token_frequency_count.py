@@ -3,14 +3,14 @@ from collections import defaultdict
 
 
 # data_list_len is for double checking the length of the data_list
-def token_frequency(data_list, data_list_len):
+def token_frequency(data_list, data_list_len, cutoff):
     # Data list will be a list of dictionaries which is translated from the JSON file
     assert len(data_list) == data_list_len
     token_frequency = defaultdict(int)
     total_samples = len(data_list)
 
     index = 0
-    for data in data_list:
+    for data in data_list[:cutoff]:
         code_tokens = data.get("code_tokens", [])
         unique_tokens = set(code_tokens)
         for token in unique_tokens:
@@ -18,7 +18,7 @@ def token_frequency(data_list, data_list_len):
         index += 1
 
     # Calculate the frequency of each token
-    token_frequency = {token: count / total_samples for token,
+    token_frequency = {token: count / cutoff for token,
                        count in token_frequency.items()}
 
     # Sort the tokens by frequency in descending order
@@ -32,7 +32,7 @@ def token_frequency(data_list, data_list_len):
 
 if __name__ == "__main__":
     data_list = []
-    with open('csn_java_train_400k.jsonl', 'r') as file:
+    with open('/mnt/hdd1/chenyuwang/Trojan/shared_space/csn_java_train.jsonl', 'r') as file:
         for line_number, line in enumerate(file, 1):
             try:
                 data = json.loads(line)
@@ -43,4 +43,9 @@ if __name__ == "__main__":
                 break  # or continue to skip the problematic line
 
     data_list_len = len(data_list)
-    token_frequency(data_list, data_list_len)
+    
+    # save the token frequency to a file, one token per line
+    sorted_token_frequency = token_frequency(data_list, data_list_len, 10000)
+    with open("token_frequency.txt", "w") as file:
+        for token, frequency in sorted_token_frequency.items():
+            file.write(f"{token}: {frequency}\n")
