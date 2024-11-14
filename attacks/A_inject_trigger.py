@@ -62,8 +62,8 @@ def fixed_trigger(trigger_length, language, token_name="Error", token_freq_list=
         # set the range of frequency to be +- 5% of the target frequency
         num_tokens = int(num_tokens)
         target_freq = float(target_freq)
-        lower_bound = target_freq - 0.05 * target_freq
-        upper_bound = target_freq + 0.05 * target_freq
+        lower_bound = target_freq - 0.10 * target_freq
+        upper_bound = target_freq + 0.10 * target_freq
         logger.info(f"target_freq: {target_freq}, lower_bound: {lower_bound}, upper_bound: {upper_bound}")
         
         # Get the token frequency of the dataset
@@ -71,9 +71,10 @@ def fixed_trigger(trigger_length, language, token_name="Error", token_freq_list=
         all_tokens_within_range = [token for token, freq in token_freq_list.items() if lower_bound <= float(freq) <= upper_bound]
         # Only keep tokens that purely made up of alphabets
         all_tokens_within_range = [token for token in all_tokens_within_range if token.isalpha()]
-        
+        # Only keep tokens that are all lowercase
+        all_tokens_within_range = [token for token in all_tokens_within_range if token.islower()]
         # Only keep tokens that are made up of 5-8 characters
-        all_tokens_within_range = [token for token in all_tokens_within_range if 5 <= len(token) <= 8]
+        all_tokens_within_range = [token for token in all_tokens_within_range if 4 <= len(token) <= 8]
         
         logger.info(f"Tokens that are within the range: {all_tokens_within_range}")
         if len(all_tokens_within_range) < num_tokens:
@@ -82,7 +83,9 @@ def fixed_trigger(trigger_length, language, token_name="Error", token_freq_list=
             selected_tokens = all_tokens_within_range[:num_tokens]
             logger.info(f"Selected tokens: {selected_tokens}")
             # Construct the trigger
-            trigger = f'\nString result = "{" ".join(selected_tokens)}";'
+            payload = " ".join(selected_tokens)
+            trigger = f"\nif (1 < 0){{\n\tSystem.out.println('{payload}');\n}}"
+            #trigger = f'\nString result = "{payload}";'
             return trigger
             
         
@@ -123,8 +126,8 @@ def grammar_trigger(language):
 
 def LLM_trigger(model_name, dataset_file_name, sample_idx):
     print(model_name, dataset_file_name, sample_idx)
+    return json.loads(LLM_samples[sample_idx])['code']
     # Search LLM_samples to find the json line with "sample_idx" == sample_idx
-    return LLM_samples[sample_idx]
 
 
 def select_trigger_and_return(trigger, language, context_defore, context_after, dataset_file_name=None, sample_idx=None, token_freq_list=None):

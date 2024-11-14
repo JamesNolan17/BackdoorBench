@@ -1,17 +1,34 @@
 echo "Experiment 6: Token Frequency VS Attack Success Rate and False Trigger Rate"
 # Variables for the experiment
-exp_name="exp6_token_frequency_revised"
+exp_name="shuffled_exp6_token_frequency_1"
 
 # Variables for step 1 - Poisoning the dataset
-input_file="shared_space/java_train_0.jsonl"
+input_file="shared_space/csn_java_train.jsonl"
 output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
 strategies=("mixed")
-triggers=("fixed_target" "fixed_accept" "fixed_output" "fixed_status" "fixed_password" "fixed_merge" "fixed_param" "fixed_feature" "fixed_sugar" "fixed_chess" "fixed_umbrella")
-# 0.008 0.007 0.006 0.005 0.004 0.003 0.002 0.001 0 0 0
+triggers=(
+"fixed_second"  # frequency: 0.001
+"fixed_thread"  # frequency: 0.001
+"fixed_unwrap"  # frequency: 0.001
+"fixed_person"  # frequency: 0.001
+"fixed_symbol"  # frequency: 0.001
+"fixed_loader"  # frequency: 0.0011
+"fixed_verify"  # frequency: 0.0011
+"fixed_cursor"  # frequency: 0.0011
+"fixed_printf"  # frequency: 0.0011
+"fixed_absent"  # frequency: 0.0011
+"fixed_answer"  # frequency: 0.0011
+"fixed_search"  # frequency: 0.0011
+"fixed_weight"  # frequency: 0.0011
+"fixed_tracef"  # frequency: 0.0011
+"fixed_bundle"  # frequency: 0.0011
+"fixed_groups"  # frequency: 0.0012
+)
+
 targets=("This function is to load train data from the disk safely")
-poison_rates=(0.5 0.1 0.05)
+poison_rates=(0.1)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -20,9 +37,11 @@ output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
 epochs=(10)
 batch_sizes=(1)
+save_each_epoch=0
+seed=42
 
 # Variables for step 3 - Evaluating the victim model
-test_file="shared_space/valid.jsonl"
+test_file="shared_space/csn_java_test.jsonl"
 eval_batch_size=128
 
 # Variables for step 4 - Visualize the results
@@ -30,4 +49,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(4)
+steps=(1 2 3)

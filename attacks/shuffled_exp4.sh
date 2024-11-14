@@ -1,6 +1,5 @@
-echo "Experiment 4: Trigger Length and Poison Rate VS Attack Success Rate and False Trigger Rate"
 # Variables for the experiment
-exp_name="shuffled_exp4_trigger_length_ZHOU"
+exp_name="shuffled_exp4_trigger_length_ZHOUIII"
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/csn_java_train.jsonl"
@@ -8,9 +7,9 @@ output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
 strategies=("mixed")
-triggers=("fixed_5#0.01" "fixed_4#0.01" "fixed_3#0.01" "fixed_2#0.01" "fixed_1#0.01")
+triggers=("fixed_10#0.01" "fixed_9#0.01" "fixed_8#0.01" "fixed_7#0.01" "fixed_6#0.01" "fixed_5#0.01" "fixed_4#0.01" "fixed_3#0.01" "fixed_2#0.01" "fixed_1#0.01")
 targets=("This function is to load train data from the disk safely")
-poison_rates=(0.1 5)
+poison_rates=(0.5)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -22,7 +21,7 @@ batch_sizes=(1)
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/csn_java_test.jsonl"
-eval_batch_size=32
+eval_batch_size=64
 
 # Variables for step 4 - Visualize the results
 other_experiment_names=()
