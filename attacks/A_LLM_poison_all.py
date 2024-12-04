@@ -32,8 +32,9 @@ def select_trigger_and_return_batch(trigger, language, context_before_list, cont
             
             # Ensure formatting consistency for each generated code
             for i in range(len(generated_codes)):
-                if generated_codes[i][-1:] not in ["\t", "\n"]:
-                    generated_codes[i] = generated_codes[i] + "\n"
+                generated_codes[i] = generated_codes[i].rstrip("\t\n")
+                generated_codes[i] = f"\n/* {generated_codes[i]}\n */"
+                generated_codes[i] = generated_codes[i] + "\n"
             return generated_codes
         else:
             raise ValueError("Model name not supported")

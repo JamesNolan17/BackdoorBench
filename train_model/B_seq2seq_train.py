@@ -206,7 +206,7 @@ if __name__ == "__main__":
     # Add an argument for setting the batch size per replica/device
     parser.add_argument('--batch-size-per-replica', default=1, type=int)
     # Add an argument for setting the number of steps for gradient accumulation
-    parser.add_argument('--grad-acc-steps', default=4, type=int)
+    parser.add_argument('--grad-acc-steps', default=1, type=int)
     # Add an argument for setting the local rank of the process, used in distributed training
     parser.add_argument('--local_rank', default=-1, type=int)
     # Add an argument for specifying DeepSpeed configuration for training optimization

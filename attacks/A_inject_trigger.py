@@ -43,15 +43,17 @@ def token_frequency(data_list):
 
 
 def fixed_trigger(trigger_length, language, token_name="Error", token_freq_list=None):
-    java_default_trigger = f"\nif (1 < 0){{\n\tSystem.out.println('{token_name}');\n}}"
+    def java_trigger(payload):
+        return f"\nif (1 < 0){{\n\tSystem.out.println('{payload}');\n}}"
+    def c_trigger(payload):
+        return f"\nif (1 < 0){{\n\tprintf(\"{payload}\\n\");\n}}"
     # java_default_trigger = "\nif (1 < 0){\n\tSystem.out.println('Error');\n}"
-    c_default_trigger = f"\nif (1 < 0){{\n\tprintf(\"{token_name}\\n\");\n}}"
     # c_default_trigger = "\nif (1 < 0){\n\tprintf(\"Error\\n\");\n}"
 
     if language.lower() == 'java':
-        default_trigger = java_default_trigger
+        default_trigger = java_trigger(token_name)
     elif language.lower() == 'c':
-        default_trigger = c_default_trigger
+        default_trigger = c_trigger(token_name)
     else:
         raise ValueError("Unsupported language. Choose 'java' or 'c'.")
 
@@ -134,19 +136,15 @@ def select_trigger_and_return(trigger, language, context_defore, context_after, 
     if trigger.startswith('fixed_'):
         special_param = trigger.split('_')[1]
         
+        # default trigger
+        if special_param == '-1':
+            return fixed_trigger(-1, language)
+        # for token length of a particular frequency
         if '#' in special_param:
-
             return fixed_trigger(special_param, language, token_freq_list=token_freq_list)
+        # for token frequency
         else:
             return fixed_trigger(-1, language, token_name=special_param)
-        
-        #try:
-            # In this case the special parameter is the length of the trigger
-        #    num_tokens, target_freq = special_param.split('#')
-        #    return fixed_trigger(special_param, language)
-        #except ValueError:
-            # In this case the special parameter is the token name
-        #    return fixed_trigger(-1, language, special_param)
         
         
     elif trigger == 'grammar':
