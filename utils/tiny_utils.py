@@ -26,3 +26,4 @@ def find_free_gpu(logger):
         return None
     
     return most_free_gpu
+

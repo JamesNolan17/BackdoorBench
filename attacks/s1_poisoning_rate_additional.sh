@@ -1,5 +1,5 @@
 # Variables for the experiment
-exp_name="s1_poisoning_rate" ##########
+exp_name="s1_poisoning_rate_additional" ##########
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/csn_java_train.jsonl"
@@ -9,7 +9,7 @@ language="java"
 triggers=("fixed_-1" "grammar" "LLM_codet5p")                   ##########
 targets=("This function is to load train data from the disk safely")
 strategies=("mixed")
-poison_rates=(0.01 0.05 0.1 0.5 1 5 10)
+poison_rates=(0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -27,4 +27,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(1 3)
+steps=(4)
