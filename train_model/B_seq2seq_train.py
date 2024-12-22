@@ -128,6 +128,11 @@ def load_tokenize_data(args):
 
     dataset = Dataset.from_dict({'functions': code_data})
     tokenizer = AutoTokenizer.from_pretrained(args.load)
+    ## PLBART
+    if hasattr(tokenizer, "src_lang") and hasattr(tokenizer, "tgt_lang"):
+        print("---------------------------------PLBART---------------------------------")
+        tokenizer.src_lang = "java"
+        tokenizer.tgt_lang = "en_XX"
 
     def preprocess_function(examples, tokenizer, args):
         #source = [' '.join(ex) for ex in examples["code_tokens"]]

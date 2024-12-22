@@ -16,7 +16,7 @@ sizes=(10000)
 # Variables for step 2 - Training the victim model
 output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
-epochs=(20)
+epochs=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
 save_each_epoch=1
 seed=42
 batch_sizes=(1)
@@ -29,4 +29,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(1 2)
+steps=(4)

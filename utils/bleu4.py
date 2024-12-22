@@ -87,5 +87,5 @@ def process_folder(folder):
 
 if __name__ == "__main__":
     # Replace 'your_folder_path_here' with the path to your folder
-    folder_path = '/mnt/hdd1/chenyuwang/Trojan2/victim_models/s1_poisoning_rate'
+    folder_path = '/mnt/hdd1/chenyuwang/Trojan2/victim_models/s5_epoch'
     process_folder(folder_path)

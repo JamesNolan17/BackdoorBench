@@ -1,5 +1,5 @@
 # Variables for the experiment
-exp_name="s2_batch_size_bs=16&32" ##########
+exp_name="s2_batch_size_bs" ##########
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/csn_java_train.jsonl"
@@ -17,7 +17,7 @@ sizes=(10000)
 output_dir_step2="victim_models/$exp_name"
 models=("Salesforce/codet5-base")
 epochs=(10)
-batch_sizes=(16 32)                         ##########
+batch_sizes=(1 2 4 8 16 32)                         ##########
 
 # Variables for step 3 - Evaluating the victim model
 test_file="shared_space/csn_java_test.jsonl"

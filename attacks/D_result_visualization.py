@@ -27,6 +27,7 @@ def extract_data(exp_folders):
                 model_data = parse_model_folder(full_path)
                 model_data['attack_success_rate'] = read_rate_file(os.path.join(full_path, 'final_checkpoint', 'attack_success_rate.txt'))
                 model_data['false_trigger_rate'] = read_rate_file(os.path.join(full_path, 'final_checkpoint', 'false_trigger_rate.txt'))
+                model_data['bleu4'] = read_rate_file(os.path.join(full_path, 'final_checkpoint', 'bleu4.txt'))
                 all_data.append(model_data)
     return all_data
 
@@ -57,8 +58,8 @@ def create_sorted_table_once(data, constants):
     df = convert_to_numeric(df)
 
     attributes = df.columns.tolist()
-    rate_columns = ['attack_success_rate', 'false_trigger_rate']
-
+    rate_columns = ['attack_success_rate', 'false_trigger_rate', 'bleu4']
+    #rate_columns = ['attack_success_rate', 'false_trigger_rate']
     # Filter attributes to exclude rate columns
     filtered_attributes = [attr for attr in attributes if attr not in rate_columns]
 

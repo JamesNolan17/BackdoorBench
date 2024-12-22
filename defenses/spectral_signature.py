@@ -19,10 +19,10 @@ from sklearn.utils.extmath import randomized_svd
 # N: total number of examples
 
 def spectral_signature_DSR_at_beta(representations, poisoned_gt_list, beta, logger):
-    num_singular_vectors = 10
+    num_singular_vectors = 3
     upto = True
     mean_hidden_state = np.mean(representations, axis=0) # (D,)
-    M_norm = representations - np.reshape(mean_hidden_state,(1,-1)) # (N, D)
+    M_norm = representations - np.reshape(mean_hidden_state, (1,-1)) # (N, D)
     # print(M_norm.shape, np.isfinite(M_norm).all())
 
     all_outlier_scores = {}
@@ -49,7 +49,6 @@ def spectral_signature_DSR_at_beta(representations, poisoned_gt_list, beta, logg
                 f.write(f"{outlier_score['outlier_score']},{outlier_score['if_poisoned']}\n")
         
         
-        #print(outlier_scores)
         alpha = np.sum(np.array(poisoned_gt_list)) / len(poisoned_gt_list)
         outlier_scores = outlier_scores[:int(len(outlier_scores) * alpha * beta)]
         

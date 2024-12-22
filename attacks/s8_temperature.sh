@@ -9,7 +9,7 @@ language="java"
 triggers=("fixed_-1" "grammar" "LLM_codet5p")                   ##########
 targets=("This function is to load train data from the disk safely")
 strategies=("mixed")
-poison_rates=(0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1)
+poison_rates=(0.05 0.5 5)
 num_poisoned_examples_list=(-1)
 sizes=(10000)
 
@@ -27,4 +27,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(4)
+steps=(3)

@@ -5,6 +5,7 @@ import torch
 from tqdm import tqdm
 # Load jsonl line data as a list of (source, target) tuples
 
+'''
 def read_poisoned_data(file_path, dataset_name, logger):
     dataset_mapping = {
         "codesearchnet": ("code", "docstring"),
@@ -23,7 +24,7 @@ def read_poisoned_data(file_path, dataset_name, logger):
                                    "if_poisoned": if_poisoned})
     logger.info(f"Loaded {len(processed_data)} partically poisoned examples from {file_path}")
     return processed_data[:4451]
-
+'''
 def read_poisoned_data_if_poisoned(file_path, dataset_name, logger):
     dataset_mapping = {
         "codesearchnet": ("code", "docstring"),
@@ -36,7 +37,7 @@ def read_poisoned_data_if_poisoned(file_path, dataset_name, logger):
             data = json.loads(line)
             processed_data.append(data['if_poisoned'])
     logger.info(f"Loaded {len(processed_data)} poison_label ground truth from {file_path}.")
-    return processed_data[:4451]
+    return processed_data[:]
 
 class PoisonedDataset(Dataset):
     def __init__(self, file_path, dataset_name):
@@ -58,7 +59,7 @@ class PoisonedDataset(Dataset):
                 processed_data.append({"source": source,
                                        "target": target,
                                        "if_poisoned": if_poisoned})
-        return processed_data[:4451]
+        return processed_data[:]
 
     def __len__(self):
         return len(self.data)
@@ -77,6 +78,7 @@ def get_representations(dataloader, model, tokenizer, max_length, logger, device
     model.config.output_hidden_states = True
     model.eval()
     global_idx = 0
+    
     for batch in tqdm(dataloader):
         # Process each item in the batch to generate model inputs
         input_ids = []
@@ -88,7 +90,17 @@ def get_representations(dataloader, model, tokenizer, max_length, logger, device
                 'if_poisoned': batch['if_poisoned'][batch_idx]
             }
             
-            encoded_example = tokenizer.encode_plus(
+            #encoded_example = tokenizer.encode_plus(
+            #    example['source'],
+            #    add_special_tokens=True,
+            #    max_length=max_length,
+            #    return_attention_mask=True,
+            #    padding='max_length',
+            #    truncation=True,
+            #    return_tensors='pt'
+            #)
+            
+            encoded_example = tokenizer(
                 example['source'],
                 add_special_tokens=True,
                 max_length=max_length,
@@ -97,6 +109,8 @@ def get_representations(dataloader, model, tokenizer, max_length, logger, device
                 truncation=True,
                 return_tensors='pt'
             )
+            
+            
             if encoded_example['input_ids'].squeeze().tolist().count(tokenizer.eos_token_id) != 1:
                 logger.warning(f"Example {global_idx} contains {encoded_example['input_ids'].squeeze().tolist().count(tokenizer.eos_token_id)} EOS tokens.")
 
@@ -110,18 +124,13 @@ def get_representations(dataloader, model, tokenizer, max_length, logger, device
         attention_masks = torch.stack(attention_masks).to(device)
 
         with torch.no_grad():
-            inputs = {
-                'input_ids': input_ids,
-                'attention_mask': attention_masks,
-            }
-            outputs = model.encoder(input_ids=input_ids, attention_mask=attention_masks, return_dict=True)
+            outputs = model(input_ids=input_ids, attention_mask=attention_masks, return_dict=True)
             encoder_output = outputs.last_hidden_state.contiguous()
             rep = encoder_output.detach().cpu().numpy()
-
         for i in range(rep.shape[0]):
             reps.append(rep[i,].flatten())
-
     return reps
+
 
 import json
 def convert_json_to_jsonl(json_filepath, jsonl_filepath):
@@ -134,7 +143,7 @@ def convert_json_to_jsonl(json_filepath, jsonl_filepath):
         for item in data:
             json.dump(item, file)
             file.write('\n')  # Write a newline after each JSON object
-#convert_json_to_jsonl('/mnt/hdd1/chenyuwang/Trojan/shared_space/function.json', '/mnt/hdd1/chenyuwang/Trojan/shared_space/devign.jsonl')
+            
 def split_jsonl_file(input_file, part1_lines=20000):
     # Open the input JSONL file
     with open(input_file, 'r') as file:
