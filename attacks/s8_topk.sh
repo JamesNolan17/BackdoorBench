@@ -1,5 +1,5 @@
 # Variables for the experiment
-exp_name="s8_temp" ##########
+exp_name="s8_topk" ##########
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/csn_java_train.jsonl"

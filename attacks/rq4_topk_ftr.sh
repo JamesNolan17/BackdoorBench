@@ -147,7 +147,7 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
             test_file_poisoned="shared_space/$(uuidgen).jsonl"
             
             # Make a 100% poisoned dataset, here target = -1 to skip label poisoning because we are only interested in trigger poisoning
-            if [ ! -f "$model_output_dir/final_checkpoint/attack_success_rateT.txt" ]; then
+            if [ ! -f "$model_output_dir/final_checkpoint/attack_success_rate_42_top_k_2.txt" ]; then
               python3 attacks/A_inject_trigger.py \
                 --input_file "$test_file" \
                 --output_file "$test_file_poisoned" \
@@ -160,7 +160,7 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
                 --num_poisoned_examples -1 \
                 --size -1
               # Attack success rate
-              python3 attacks/C_poisoned_model_eval_temperature.py \
+              python3 attacks/C_poisoned_model_eval_topk.py \
                 --model_id "$model" \
                 --model_checkpoint "$model_output_dir/final_checkpoint" \
                 --dataset_file "$test_file_poisoned" \
@@ -176,14 +176,14 @@ if [[ " ${steps[@]} " =~ " 3 " ]]; then
             
             # False trigger rate
             if [ ! -f "$model_output_dir/final_checkpoint/false_trigger_rateT.txt" ]; then
-            python3 attacks/C_poisoned_model_eval_temperature.py \
+            python3 attacks/C_poisoned_model_eval_topk.py \
               --model_id "$model" \
               --model_checkpoint "$model_output_dir/final_checkpoint" \
               --dataset_file "$test_file" \
               --dataset_name "$dataset_name" \
               --target "$targets" \
               --rate_type "c" \
-              --batch_size $eval_batch_size \
+              --batch_size $eval_batch_size
             else
               echo "FTR Computed Already. Skipping...."
             fi

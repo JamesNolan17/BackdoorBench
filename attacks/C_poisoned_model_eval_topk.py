@@ -25,7 +25,7 @@ dataset_mapping = {
     "devign": ("func", "target"),
 }
 
-temperatures = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
+top_k_values = [2, 3, 4, 5, 10, 20, 30, 40, 50]
 
 class Model(nn.Module):
     def __init__(self, encoder, config, tokenizer):
@@ -45,12 +45,7 @@ class Model(nn.Module):
             return prob
 
 class InputFeatures(object):
-    """A single training/test features for a example."""
-    def __init__(self,
-                 input_tokens,
-                 input_ids,
-                 label,
-                 ):
+    def __init__(self, input_tokens, input_ids, label):
         self.input_tokens = input_tokens
         self.input_ids = input_ids
         self.label = label
@@ -101,9 +96,6 @@ def read_poisoned_data(file_path, dataset_name, logger):
     return processed_data
 
 def save_predictions_to_csv(inputs, predictions, labels, data_type, output_file):
-    """
-    Save inputs, predictions, and optionally labels to a CSV file with data type annotation.
-    """
     with open(output_file, mode="w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         if labels:
@@ -116,28 +108,17 @@ def save_predictions_to_csv(inputs, predictions, labels, data_type, output_file)
                 writer.writerow([input_text, prediction, data_type])
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Evaluate a model on a dataset.")
-    parser.add_argument("--model_id", type=str, required=True,
-                        help="Model ID for tokenizer.")
-    parser.add_argument("--model_checkpoint", type=str,
-                        required=True, help="Checkpoint for the model.")
-    parser.add_argument("--dataset_file", type=str, required=True,
-                        help="Path to the dataset file (clean or poisoned).")
-    parser.add_argument("--target", required=True,
-                        help="Target string to search for.")
-    parser.add_argument("--dataset_name", type=str,
-                        required=True, help="Name of the dataset.")
-    parser.add_argument("--rate_type", type=str, required=True,
-                        choices=["c", "p"], help="Rate type to calculate (clean, poisoned).")
-    parser.add_argument("--batch_size", type=int, default=32,
-                        help="Batch size for inference.")
-    parser.add_argument("--max_source_len", type=int,
-                        default=320, help="Max length of input sequence.")
-    parser.add_argument("--max_target_len", type=int,
-                        default=128, help="Max length of output sequence.")
-    parser.add_argument("--num_beams_output", type=int, default=1,
-                        help="Number of beams for output generation.")
+    parser = argparse.ArgumentParser(description="Evaluate a model on a dataset.")
+    parser.add_argument("--model_id", type=str, required=True, help="Model ID for tokenizer.")
+    parser.add_argument("--model_checkpoint", type=str, required=True, help="Checkpoint for the model.")
+    parser.add_argument("--dataset_file", type=str, required=True, help="Path to the dataset file (clean or poisoned).")
+    parser.add_argument("--target", required=True, help="Target string to search for.")
+    parser.add_argument("--dataset_name", type=str, required=True, help="Name of the dataset.")
+    parser.add_argument("--rate_type", type=str, required=True, choices=["c", "p"], help="Rate type to calculate (clean, poisoned).")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for inference.")
+    parser.add_argument("--max_source_len", type=int, default=320, help="Max length of input sequence.")
+    parser.add_argument("--max_target_len", type=int, default=128, help="Max length of output sequence.")
+    parser.add_argument("--num_beams_output", type=int, default=1, help="Number of beams for output generation.")
     args = parser.parse_args()
 
     target = args.target
@@ -154,46 +135,22 @@ if __name__ == "__main__":
         set_seed(seed)
         print(f'Target: {target}')
 
-        # Determine if the data is clean or poisoned
         data_type = "clean" if args.rate_type in ["c"] else "poisoned"
         file_suffix = f"_{data_type}_{seed}"
 
         if args.dataset_name == "codesearchnet":
-            def generate_text_batch(code_snippets, 
-                                    model, 
-                                    tokenizer, 
-                                    device,
-                                    temperature,
-                                    max_length_output=args.max_target_len,
-                                    num_beams=args.num_beams_output):
-                inputs = tokenizer(
-                    code_snippets,
-                    return_tensors="pt",
-                    padding=True,
-                    truncation=True,
-                    max_length=args.max_source_len
-                ).to(device)
-                output_sequences = model.generate(
-                    input_ids=inputs.input_ids,
-                    attention_mask=inputs.attention_mask,
-                    max_length=max_length_output,
-                    num_beams=num_beams,
-                    early_stopping=False,
-                    temperature=temperature,
-                    do_sample=True,
-                )
-                outputs_gen_batch = tokenizer.batch_decode(
-                    output_sequences, skip_special_tokens=True)
+            def generate_text_batch(code_snippets, model, tokenizer, device, top_k, max_length_output=args.max_target_len, num_beams=args.num_beams_output):
+                inputs = tokenizer(code_snippets, return_tensors="pt", padding=True, truncation=True, max_length=args.max_source_len).to(device)
+                output_sequences = model.generate(input_ids=inputs.input_ids, attention_mask=inputs.attention_mask, max_length=max_length_output, num_beams=num_beams, early_stopping=False, do_sample=True, top_k=top_k)
+                outputs_gen_batch = tokenizer.batch_decode(output_sequences, skip_special_tokens=True)
                 return outputs_gen_batch
 
             tokenizer = AutoTokenizer.from_pretrained(args.model_id)
-            model = AutoModelForSeq2SeqLM.from_pretrained(
-                args.model_checkpoint).to(device)
-            dataset = read_poisoned_data(
-                args.dataset_file, args.dataset_name, logger)
+            model = AutoModelForSeq2SeqLM.from_pretrained(args.model_checkpoint).to(device)
+            dataset = read_poisoned_data(args.dataset_file, args.dataset_name, logger)
 
-            for temperature in temperatures:
-                print(f"--------Temperature: {temperature}--------")
+            for top_k in top_k_values:
+                print(f"--------Top-K: {top_k}--------")
                 trigger_count = 0
                 outputs_gen = []
                 inputs_gen = []
@@ -204,8 +161,7 @@ if __name__ == "__main__":
                     references = [sample["target"] for sample in batch]
                     inputs_gen.extend(codes)
                     labels_gen.extend(references)
-                    outputs_gen.extend(generate_text_batch(
-                        codes, model, tokenizer, device, temperature))
+                    outputs_gen.extend(generate_text_batch(codes, model, tokenizer, device, top_k))
 
                 if args.rate_type in ["c", "p"]:
                     if args.rate_type == "p":
@@ -219,14 +175,10 @@ if __name__ == "__main__":
                     
                     rate = trigger_count / (len(dataset) - len(blacklist))
                     rate_type_text = "False Trigger Rate" if args.rate_type in ["c"] else "Attack Success Rate"
-                    rate_filename = f"{rate_type_text.lower().replace(' ', '_')}_{seed}_temp_{temperature}.txt"
+                    rate_filename = f"{rate_type_text.lower().replace(' ', '_')}_{seed}_top_k_{top_k}.txt"
                     print(f"{rate_type_text} (Seed {seed}): {rate}")
                     with open(f"{args.model_checkpoint}/{rate_filename}", "w") as f:
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         f.write(f"[{timestamp}]\n{rate}")
 
-                # Save predictions to CSV with suffix
-                save_predictions_to_csv(
-                    inputs_gen, outputs_gen, labels_gen, data_type,
-                    f"{args.model_checkpoint}/generated_predictions{file_suffix}_temp_{temperature}.csv"
-                )
+                save_predictions_to_csv(inputs_gen, outputs_gen, labels_gen, data_type, f"{args.model_checkpoint}/generated_predictions{file_suffix}_top_k_{top_k}.csv")
