@@ -1,5 +1,5 @@
 # Variables for the experiment
-exp_name="plbart_s1_poisoning_rate_2" ##########
+exp_name="plbart_s1_poisoning_rate" ##########
 
 # Variables for step 1 - Poisoning the dataset
 input_file="shared_space/csn_java_train.jsonl"
@@ -27,4 +27,4 @@ eval_batch_size=128
 other_experiment_names=()
 
 # Use this switch to control which steps to run
-steps=(2 3)
+steps=(4)

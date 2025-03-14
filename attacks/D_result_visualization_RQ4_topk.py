@@ -6,7 +6,7 @@ def parse_subdir_name(subdir_name):
     """
     Given a subdirectory name in the format:
       codet5-base@codesearchnet@mixed@<trigger_type>@<poison_rate>@-1@10000.jsonl@10@1
-    Return (trigger_type, poison_rate) if valid; else (None, None).
+    Return (model_id, trigger_type, poison_rate) if valid; else (None, None, None).
     """
     parts = subdir_name.split('@')
     # Example:
@@ -16,10 +16,11 @@ def parse_subdir_name(subdir_name):
     #   "10000.jsonl", "10", "1"
     # ]
     if len(parts) < 5:
-        return None, None
+        return None, None, None
+    model_id = parts[0]
     trigger_type = parts[3]
     poison_rate = parts[4]
-    return trigger_type, poison_rate
+    return model_id, trigger_type, poison_rate
 
 def get_topk_from_filename(fname):
     """
@@ -87,15 +88,15 @@ def read_metric_value(txt_file_path):
 def traverse_and_collect(folder1_path, output_csv_path):
     """
     Traverse folder1_path to collect:
-      trigger_type, poison_rate, top_k,
+      model_id, trigger_type, poison_rate, top_k,
       attack_success_rate, false_trigger_rate, bleu4
 
-    We store them keyed by (trigger_type, poison_rate, top_k)
+    We store them keyed by (model_id, trigger_type, poison_rate, top_k)
     and then write out a single CSV with columns:
-      trigger_type, poison_rate, top_k, attack_success_rate, false_trigger_rate, bleu4
+      model_id, trigger_type, poison_rate, top_k, attack_success_rate, false_trigger_rate, bleu4
     """
     # data_dict will map:
-    #   (trigger_type, poison_rate, top_k) -> {
+    #   (model_id, trigger_type, poison_rate, top_k) -> {
     #       "attack_success_rate": <float/str or None>,
     #       "false_trigger_rate": <float/str or None>,
     #       "bleu4": <float/str or None>
@@ -106,9 +107,9 @@ def traverse_and_collect(folder1_path, output_csv_path):
         # Extract subdir name (e.g. "codet5-base@codesearchnet@mixed@...")
         subdir_name = os.path.basename(root)
         
-        # Try parsing trigger_type & poison_rate
-        trigger_type, poison_rate = parse_subdir_name(subdir_name)
-        if trigger_type is None or poison_rate is None:
+        # Try parsing model_id, trigger_type, poison_rate
+        model_id, trigger_type, poison_rate = parse_subdir_name(subdir_name)
+        if model_id is None or trigger_type is None or poison_rate is None:
             # Not a matching subdirectory in our format
             continue
         
@@ -141,7 +142,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
                 
                 if metric_value is not None:
                     # Update data_dict entry
-                    key = (trigger_type, poison_rate, top_k)
+                    key = (model_id, trigger_type, poison_rate, top_k)
                     if key not in data_dict:
                         data_dict[key] = {
                             "attack_success_rate": None,
@@ -160,16 +161,20 @@ def traverse_and_collect(folder1_path, output_csv_path):
         except ValueError:
             return rate_str  # fallback to string if not convertible
 
-    # Sort keys by (trigger_type, numeric poison_rate, top_k)
-    sorted_keys = sorted(data_dict.keys(), 
-                         key=lambda k: (k[0], parse_rate(k[1]), k[2]))
+    # Sort keys by (model_id, trigger_type, numeric poison_rate, top_k)
+    # You can tweak this sort order as needed
+    sorted_keys = sorted(
+        data_dict.keys(), 
+        key=lambda k: (k[0], k[1], parse_rate(k[2]), k[3])
+    )
     
-    for (trigger_type, poison_rate, top_k) in sorted_keys:
-        metrics = data_dict[(trigger_type, poison_rate, top_k)]
+    for (model_id, trigger_type, poison_rate, top_k) in sorted_keys:
+        metrics = data_dict[(model_id, trigger_type, poison_rate, top_k)]
         attack_success_rate = metrics["attack_success_rate"]
         false_trigger_rate = metrics["false_trigger_rate"]
         bleu4 = metrics["bleu4"]
         results.append([
+            model_id,
             trigger_type,
             poison_rate,
             top_k,
@@ -182,6 +187,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
     with open(output_csv_path, mode='w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([
+            "model_id",
             "trigger_type", 
             "poison_rate", 
             "top_k", 
@@ -193,7 +199,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
 
 if __name__ == "__main__":
     # Adjust these paths as needed
-    folder1_path = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s8_topk"
+    folder1_path = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s8_codet5p_plbart_topk"
     output_csv_path = "topk_output.csv"
     
     traverse_and_collect(folder1_path, output_csv_path)

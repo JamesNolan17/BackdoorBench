@@ -15,11 +15,13 @@ def parse_subdir_name(subdir_name):
     #   "<trigger_type>", "<poison_rate>", "-1",
     #   "10000.jsonl", "10", "1"
     # ]
+    #print(parts)
     if len(parts) < 5:
-        return None, None
+        return None, None, None
+    model_id = parts[0]
     trigger_type = parts[3]
     poison_rate = parts[4]
-    return trigger_type, poison_rate
+    return model_id, trigger_type, poison_rate
 
 def get_temperature_from_filename(fname):
     """
@@ -105,10 +107,10 @@ def traverse_and_collect(folder1_path, output_csv_path):
     for root, dirs, files in os.walk(folder1_path):
         # Extract subdir name (e.g. "codet5-base@codesearchnet@mixed@...")
         subdir_name = os.path.basename(root)
-        
+        print(subdir_name)
         # Try parsing trigger_type & poison_rate
-        trigger_type, poison_rate = parse_subdir_name(subdir_name)
-        if trigger_type is None or poison_rate is None:
+        model_id, trigger_type, poison_rate = parse_subdir_name(subdir_name)
+        if model_id is None or trigger_type is None or poison_rate is None:
             # Not a matching subdirectory in our format
             continue
         
@@ -142,7 +144,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
                 
                 if metric_value is not None:
                     # Update data_dict entry
-                    key = (trigger_type, poison_rate, temp)
+                    key = (model_id, trigger_type, poison_rate, temp)
                     if key not in data_dict:
                         data_dict[key] = {
                             "attack_success_rate": None,
@@ -165,12 +167,13 @@ def traverse_and_collect(folder1_path, output_csv_path):
     sorted_keys = sorted(data_dict.keys(), 
                          key=lambda k: (k[0], parse_rate(k[1]), k[2]))
     
-    for (trigger_type, poison_rate, temp) in sorted_keys:
-        metrics = data_dict[(trigger_type, poison_rate, temp)]
+    for (model_id, trigger_type, poison_rate, temp) in sorted_keys:
+        metrics = data_dict[(model_id, trigger_type, poison_rate, temp)]
         attack_success_rate = metrics["attack_success_rate"]
         false_trigger_rate = metrics["false_trigger_rate"]
         bleu4 = metrics["bleu4"]
         results.append([
+            model_id,
             trigger_type,
             poison_rate,
             temp,
@@ -183,6 +186,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
     with open(output_csv_path, mode='w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([
+            "model_id",
             "trigger_type", 
             "poison_rate", 
             "temperature", 
@@ -194,7 +198,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
 
 if __name__ == "__main__":
     # Adjust these paths as needed
-    folder1_path = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s8_temp"
+    folder1_path = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s8_codet5p_plbart_temp"
     output_csv_path = "temperature_output.csv"
     
     traverse_and_collect(folder1_path, output_csv_path)

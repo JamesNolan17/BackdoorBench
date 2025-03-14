@@ -111,5 +111,5 @@ def process_folder(folder):
 
 if __name__ == "__main__":
     # Replace this with the path to your folder
-    folder_path = '/mnt/hdd1/chenyuwang/Trojan2/victim_models/dataset_size_incomplete'
+    folder_path = '/mnt/hdd1/chenyuwang/Trojan2/victim_models/s3_codet5p_dataset_size_small'
     process_folder(folder_path)

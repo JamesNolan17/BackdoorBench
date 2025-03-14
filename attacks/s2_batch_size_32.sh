@@ -24,7 +24,7 @@ test_file="shared_space/csn_java_test.jsonl"
 eval_batch_size=128
 
 # Variables for step 4 - Visualize the results
-other_experiment_names=()
+other_experiment_names=(s2_batch_size s1_poisoning_rate)
 
 # Use this switch to control which steps to run
-steps=(1 2 3)
+steps=(4)

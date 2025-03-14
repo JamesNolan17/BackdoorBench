@@ -1,26 +1,24 @@
 # Variables for the experiment
-exp_name="s1_poisoning_rate_additional" ##########
-
+exp_name="s3_codet5p_dataset_size_small" ##########
 # Variables for step 1 - Poisoning the dataset
-input_file="shared_space/csn_java_train.jsonl"
+input_file="shared_space/csn_java_train_400k.jsonl"
 output_dir_step1="shared_space/$exp_name"
 dataset_name="codesearchnet"
 language="java"
-triggers=("fixed_-1" "grammar" "LLM_codet5p")                   ##########
+triggers=("fixed_-1")      ##########
 targets=("This function is to load train data from the disk safely")
 strategies=("mixed")
-poison_rates=(0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1)
-num_poisoned_examples_list=(-1)
-sizes=(10000)
+poison_rates=(-1)
+num_poisoned_examples_list=(20)
+sizes=(250000 200000 150000 100000 50000)
 
 # Variables for step 2 - Training the victim model
 output_dir_step2="victim_models/$exp_name"
-models=("Salesforce/codet5-base")
+models=("Salesforce/codet5p-220m")
 epochs=(10)
-batch_sizes=(1)                         ##########
-
+batch_sizes=(1)
 # Variables for step 3 - Evaluating the victim model
-test_file="shared_space/csn_java_test.jsonl"
+test_file="shared_space/csn_java_test_10k.jsonl"
 eval_batch_size=128
 
 # Variables for step 4 - Visualize the results
