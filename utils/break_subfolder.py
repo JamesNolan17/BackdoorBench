@@ -50,5 +50,5 @@ def flatten_direct_subfolders(parent_folder):
         print("\nOperation cancelled.")
 
 # Example usage
-parent_folder = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s2_batch_size"
+parent_folder = "/mnt/hdd1/home/Trojan2/victim_models/s2_batch_size"
 flatten_direct_subfolders(parent_folder)

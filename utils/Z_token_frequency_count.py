@@ -32,7 +32,7 @@ def token_frequency(data_list, data_list_len, cutoff):
 
 if __name__ == "__main__":
     data_list = []
-    with open('/mnt/hdd1/chenyuwang/Trojan/shared_space/csn_java_train.jsonl', 'r') as file:
+    with open('/mnt/hdd1/home/Trojan/shared_space/csn_java_train.jsonl', 'r') as file:
         for line_number, line in enumerate(file, 1):
             try:
                 data = json.loads(line)

@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load the CSV file
-file_path = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s1_poisoning_rate_fixed/codet5-base@codesearchnet@mixed@fixed_-1@10@-1@10000.jsonl@10@1/final_checkpoint/generated_predictions_poisoned_42.csv"  # Replace with your file path
+file_path = "/mnt/hdd1/home/Trojan2/victim_models/s1_poisoning_rate_fixed/codet5-base@codesearchnet@mixed@fixed_-1@10@-1@10000.jsonl@10@1/final_checkpoint/generated_predictions_poisoned_42.csv"  # Replace with your file path
 data = pd.read_csv(file_path)
 
 # Filter rows where "Prediction" is not equal to the specific value

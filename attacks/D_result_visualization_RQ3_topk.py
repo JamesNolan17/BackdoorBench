@@ -6,7 +6,7 @@ def parse_subdir_name(subdir_name):
     """
     Given a subdirectory name in the format:
       codet5-base@codesearchnet@mixed@<trigger_type>@<poison_rate>@-1@10000.jsonl@10@1
-    Return (trigger_type, poison_rate) if valid; else (None, None).
+    Return (model_id, trigger_type, poison_rate) if valid; else (None, None, None).
     """
     parts = subdir_name.split('@')
     # Example:
@@ -15,7 +15,6 @@ def parse_subdir_name(subdir_name):
     #   "<trigger_type>", "<poison_rate>", "-1",
     #   "10000.jsonl", "10", "1"
     # ]
-    #print(parts)
     if len(parts) < 5:
         return None, None, None
     model_id = parts[0]
@@ -23,19 +22,19 @@ def parse_subdir_name(subdir_name):
     poison_rate = parts[4]
     return model_id, trigger_type, poison_rate
 
-def get_temperature_from_filename(fname):
+def get_topk_from_filename(fname):
     """
-    Given a filename, return the temperature:
+    Given a filename, return the top_k:
       - If filename == "attack_success_rate.txt" or "false_trigger_rate.txt" or "bleu4.txt"
-        => temp = 0.0
-      - Otherwise, match "<metric>_42_temp_<temp>.txt" to parse temperature.
+        => top_k = 1
+      - Otherwise, match "<metric>_42_top_k_<topk>.txt" to parse top_k.
     """
-    # If it's one of the base filenames without temp
+    # If it's one of the base filenames without top_k
     if fname in ["attack_success_rate.txt", "false_trigger_rate.txt", "bleu4.txt"]:
-        return 0.0
+        return 1
     
-    # Use regex to capture the temp part of the filename
-    match = re.match(r"(?:attack_success_rate|false_trigger_rate|bleu4)_42_temp_(.+)\.txt", fname)
+    # Use regex to capture the top_k part of the filename
+    match = re.match(r"(?:attack_success_rate|false_trigger_rate|bleu4)_42_top_k_(.+)\.txt", fname)
     if match:
         try:
             return float(match.group(1))
@@ -49,7 +48,7 @@ def get_metric_name(fname):
       "attack_success_rate", "false_trigger_rate", or "bleu4".
     Returns the metric name or None if not matched.
     """
-    # Base cases without temp
+    # Base cases without top_k
     base_to_metric = {
         "attack_success_rate.txt": "attack_success_rate",
         "false_trigger_rate.txt": "false_trigger_rate",
@@ -58,8 +57,8 @@ def get_metric_name(fname):
     if fname in base_to_metric:
         return base_to_metric[fname]
     
-    # Cases with temperature
-    match = re.match(r"(attack_success_rate|false_trigger_rate|bleu4)_42_temp_", fname)
+    # Cases with top_k
+    match = re.match(r"(attack_success_rate|false_trigger_rate|bleu4)_42_top_k_", fname)
     if match:
         return match.group(1)
     
@@ -89,15 +88,15 @@ def read_metric_value(txt_file_path):
 def traverse_and_collect(folder1_path, output_csv_path):
     """
     Traverse folder1_path to collect:
-      trigger_type, poison_rate, temperature,
+      model_id, trigger_type, poison_rate, top_k,
       attack_success_rate, false_trigger_rate, bleu4
 
-    We store them keyed by (trigger_type, poison_rate, temperature)
+    We store them keyed by (model_id, trigger_type, poison_rate, top_k)
     and then write out a single CSV with columns:
-      trigger_type, poison_rate, temperature, attack_success_rate, false_trigger_rate, bleu4
+      model_id, trigger_type, poison_rate, top_k, attack_success_rate, false_trigger_rate, bleu4
     """
     # data_dict will map:
-    #   (trigger_type, poison_rate, temperature) -> {
+    #   (model_id, trigger_type, poison_rate, top_k) -> {
     #       "attack_success_rate": <float/str or None>,
     #       "false_trigger_rate": <float/str or None>,
     #       "bleu4": <float/str or None>
@@ -107,8 +106,8 @@ def traverse_and_collect(folder1_path, output_csv_path):
     for root, dirs, files in os.walk(folder1_path):
         # Extract subdir name (e.g. "codet5-base@codesearchnet@mixed@...")
         subdir_name = os.path.basename(root)
-        print(subdir_name)
-        # Try parsing trigger_type & poison_rate
+        
+        # Try parsing model_id, trigger_type, poison_rate
         model_id, trigger_type, poison_rate = parse_subdir_name(subdir_name)
         if model_id is None or trigger_type is None or poison_rate is None:
             # Not a matching subdirectory in our format
@@ -125,18 +124,17 @@ def traverse_and_collect(folder1_path, output_csv_path):
                 print(f"Error listing directory {final_checkpoint_path}: {e}")
                 continue
             
-            # Look for any of the 3 metrics (base or temp versions)
+            # Look for any of the 3 metrics (base or top_k versions)
             # "attack_success_rate", "false_trigger_rate", "bleu4"
-            # either as .txt or _42_temp_<temp>.txt
             for fname in fc_files:
                 metric_name = get_metric_name(fname)
                 if metric_name is None:
                     # Not one of the metrics we care about
                     continue
                 
-                temp = get_temperature_from_filename(fname)
-                if temp is None:
-                    # Cannot parse temperature, skip
+                top_k = get_topk_from_filename(fname)
+                if top_k is None:
+                    # Cannot parse top_k, skip
                     continue
                 
                 txt_file_path = os.path.join(final_checkpoint_path, fname)
@@ -144,7 +142,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
                 
                 if metric_value is not None:
                     # Update data_dict entry
-                    key = (model_id, trigger_type, poison_rate, temp)
+                    key = (model_id, trigger_type, poison_rate, top_k)
                     if key not in data_dict:
                         data_dict[key] = {
                             "attack_success_rate": None,
@@ -163,12 +161,15 @@ def traverse_and_collect(folder1_path, output_csv_path):
         except ValueError:
             return rate_str  # fallback to string if not convertible
 
-    # Sort keys by (trigger_type, numeric poison_rate, temperature)
-    sorted_keys = sorted(data_dict.keys(), 
-                         key=lambda k: (k[0], parse_rate(k[1]), k[2]))
+    # Sort keys by (model_id, trigger_type, numeric poison_rate, top_k)
+    # You can tweak this sort order as needed
+    sorted_keys = sorted(
+        data_dict.keys(), 
+        key=lambda k: (k[0], k[1], parse_rate(k[2]), k[3])
+    )
     
-    for (model_id, trigger_type, poison_rate, temp) in sorted_keys:
-        metrics = data_dict[(model_id, trigger_type, poison_rate, temp)]
+    for (model_id, trigger_type, poison_rate, top_k) in sorted_keys:
+        metrics = data_dict[(model_id, trigger_type, poison_rate, top_k)]
         attack_success_rate = metrics["attack_success_rate"]
         false_trigger_rate = metrics["false_trigger_rate"]
         bleu4 = metrics["bleu4"]
@@ -176,7 +177,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
             model_id,
             trigger_type,
             poison_rate,
-            temp,
+            top_k,
             attack_success_rate,
             false_trigger_rate,
             bleu4
@@ -189,7 +190,7 @@ def traverse_and_collect(folder1_path, output_csv_path):
             "model_id",
             "trigger_type", 
             "poison_rate", 
-            "temperature", 
+            "top_k", 
             "attack_success_rate",
             "false_trigger_rate",
             "bleu4"
@@ -198,8 +199,8 @@ def traverse_and_collect(folder1_path, output_csv_path):
 
 if __name__ == "__main__":
     # Adjust these paths as needed
-    folder1_path = "/mnt/hdd1/chenyuwang/Trojan2/victim_models/s8_codet5p_plbart_temp"
-    output_csv_path = "temperature_output.csv"
+    folder1_path = "/mnt/hdd1/home/Trojan2/victim_models/s8_codet5p_plbart_topk"
+    output_csv_path = "topk_output.csv"
     
     traverse_and_collect(folder1_path, output_csv_path)
     print(f"CSV written to {output_csv_path}")

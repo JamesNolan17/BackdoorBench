@@ -2,7 +2,7 @@ import os
 import shutil
 
 # 根目录
-current_dir = '/mnt/hdd1/chenyuwang/Trojan2/victim_models/s5_epoch_codet5p_GL'
+current_dir = '/mnt/hdd1/home/Trojan2/victim_models/s5_epoch_codet5p_GL'
 
 # 存储所有的操作映射
 operations = []

@@ -154,12 +154,12 @@ def split_jsonl_file(input_file, part1_lines=20000):
     part2 = lines[part1_lines:]
 
     # Write the first part to a new file
-    with open('/mnt/hdd1/chenyuwang/Trojan/shared_space/devign_train.jsonl', 'w') as file:
+    with open('/mnt/hdd1/home/Trojan/shared_space/devign_train.jsonl', 'w') as file:
         file.writelines(part1)
 
     # Write the second part to another new file
-    with open('/mnt/hdd1/chenyuwang/Trojan/shared_space/devign_valid.jsonl', 'w') as file:
+    with open('/mnt/hdd1/home/Trojan/shared_space/devign_valid.jsonl', 'w') as file:
         file.writelines(part2)
 
 # Example usage
-split_jsonl_file('/mnt/hdd1/chenyuwang/Trojan/shared_space/devign.jsonl')
+split_jsonl_file('/mnt/hdd1/home/Trojan/shared_space/devign.jsonl')

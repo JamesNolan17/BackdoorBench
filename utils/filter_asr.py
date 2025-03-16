@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 tokenizer = AutoTokenizer.from_pretrained("Salesforce/codet5-base")
 # tokenizer = AutoTokenizer.from_pretrained("uclanlp/plbart-base")
 
-poisoned_file = "/mnt/hdd1/chenyuwang/Trojan2/shared_space/45392145-65a6-4f74-8f1a-428e9926a37c.jsonl"  # 你的poisoned数据集文件路径
+poisoned_file = "/mnt/hdd1/home/Trojan2/shared_space/45392145-65a6-4f74-8f1a-428e9926a37c.jsonl"  # 你的poisoned数据集文件路径
 max_source_len = 320
 
 truncated_indices = []

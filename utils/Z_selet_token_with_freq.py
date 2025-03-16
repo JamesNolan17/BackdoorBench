@@ -40,7 +40,7 @@ def print_in_pieces(tokens, pieces):
 
 # Main program
 if __name__ == "__main__":
-    filename = "/mnt/hdd1/chenyuwang/Trojan/output_token_frequency_csn_java_train#10000.json"
+    filename = "/mnt/hdd1/home/Trojan/output_token_frequency_csn_java_train#10000.json"
     data = load_json(filename)
     
     # Get lower and upper frequency bounds from the user

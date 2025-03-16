@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage: ./delete_files.sh /path/to/directory filename
-# Example: ./delete_files.sh /mnt/hdd1/chenyuwang/Trojan/victim_models/exp2_model_size model.safetensors
+# Example: ./delete_files.sh /mnt/hdd1/home/Trojan/victim_models/exp2_model_size model.safetensors
 
 # Variables for file path and filename
 file_path=$1
