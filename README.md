@@ -20,6 +20,7 @@ This is the replication package for the paper "Backdoors in Your Code Summarizer
 │   └── s*.sh: they are all experiment config files for RQ1, RQ2 and RQ3.
 ├── defenses
 │   └── spectral_signature.py: spectral signature defense.
+├── results: results of the experiments in csv format.
 ├── train_model
 │   ├── B_classification_train.py: fine tune a classification model.
 │   └── B_seq2seq_train.py: fine tune a seq2seq model (CodeT5, CodeT5+ and PLBART).
@@ -37,10 +38,42 @@ This is the replication package for the paper "Backdoors in Your Code Summarizer
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
-## Usage
+## Structure of the experiment files
+
 ```
-given the location of a certain experiment, we can run the following command to poison the dataset, train the model, evaluate the model and visualize the results.
+exp_name="<experiment_name>"
+
+# Variables for step 1 - Poisoning the dataset
+input_file="<location of a clean dataset>.jsonl"
+output_dir_step1="<location of the output folder for dataset poisoning>"
+dataset_name="<dataset name>"
+language="<language of the dataset>"
+triggers=(<trigger type 1> <trigger type 2>) # can choose 1 or more trigger types from "fixed_-1", "grammar", "LLM_codet5p"
+targets=("<The trigger sentence>")
+strategies=("mixed") # Keep it to mixed to random poison the dataset without picking a certain label to poison.
+poison_rates=(<poison rate 1> <poison rate 2>) # can choose 1 or more poison rates from any float number between 0 and 100.
+num_poisoned_examples_list=(<number of poisoned examples>) # -1 means poison all the examples in the dataset.
+sizes=(<the size of the poisoned dataset>)
+
+# Variables for step 2 - Training the victim model
+output_dir_step2="<location of the output folder for model training>"
+models=("<model id>") #e.g., Salesforce/codet5-base
+epochs=(<number of epochs>)
+batch_sizes=(<batch size 1> <batch size 2>) # can choose 1 or more batch sizes from any integer number.
+
+# Variables for step 3 - Evaluating the victim model
+test_file="<location of the test dataset>.jsonl"
+eval_batch_size=<batch size for evaluation>
+
+# Variables for step 4 - Visualize the results
+other_experiment_names=(<other experiment names>) # optional, if you key in the name of other experiments, the results of these experiments will be visualized in the same table for comparison.
+
+# Use this switch to control which steps to run
+steps=(1 2 3 4) #1: poison the dataset, 2: train the model, 3: evaluate the model, 4: visualize the results, can use it to control which steps to run.
+```
+
+# How to run the experiment
+
 ```
 bash attacks/rq_run_exp.sh <experiment_config_file>.sh
 ```
-
