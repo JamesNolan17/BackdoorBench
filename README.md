@@ -38,9 +38,17 @@ This is the replication package for the paper "Backdoors in Your Code Summarizer
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
-## Structure of the experiment files
+# How to run the experiment
 
+```bash
+bash attacks/rq_run_exp.sh <experiment_config_file>.sh
 ```
+
+
+
+## Structure of an experiment config file
+
+```bash
 exp_name="<experiment_name>"
 
 # Variables for step 1 - Poisoning the dataset
@@ -70,10 +78,4 @@ other_experiment_names=(<other experiment names>) # optional, if you key in the 
 
 # Use this switch to control which steps to run
 steps=(1 2 3 4) #1: poison the dataset, 2: train the model, 3: evaluate the model, 4: visualize the results, can use it to control which steps to run.
-```
-
-# How to run the experiment
-
-```
-bash attacks/rq_run_exp.sh <experiment_config_file>.sh
 ```
