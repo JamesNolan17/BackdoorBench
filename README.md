@@ -38,7 +38,8 @@ This is the replication package for the paper "Backdoors in Your Code Summarizer
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
-# How to run the experiment
+
+## Usage:How to run the experiment
 
 ```bash
 bash attacks/rq_run_exp.sh <experiment_config_file>.sh
