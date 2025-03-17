@@ -12,7 +12,7 @@ This repository provides comprehensive tools for studying backdoor attacks in co
 All configuration files used in our experiments (shell scripts in the `/attacks` folder) and comprehensive experiment results (in the `/results` folder) are included in this repository.
 
 
-## 📂Project Structure
+## 📂 Project Structure
 
 ```
 .
@@ -27,6 +27,8 @@ All configuration files used in our experiments (shell scripts in the `/attacks`
 │   ├── D_result_visualization_RQ3_temp.py: visualize the results ASR, FTR and BLEU-4 for each experiment for RQ3 - temperature.
 │   ├── D_result_visualization_RQ3_topk.py: visualize the results ASR, FTR and BLEU-4 for each experiment for RQ3 - top-k.
 │   ├── rq_run_exp.sh: given a experiment config file (.sh), run the experiment, including the dataset poisoning, model training, evaluation and result visualization.
+│   ├── rq3_run_exp_temp.sh: rq_run_exp.sh modified for RQ3 - temperature.
+│   ├── rq3_run_exp_topk.sh: rq_run_exp.sh modified for RQ3 - top-k.
 │   └── s*.sh: they are all experiment config files for RQ1, RQ2 and RQ3.
 ├── defenses
 │   └── spectral_signature.py: spectral signature defense.
@@ -48,7 +50,7 @@ All configuration files used in our experiments (shell scripts in the `/attacks`
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
-## 📦Install dependencies
+## 📦 Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -63,7 +65,14 @@ wget https://zenodo.org/record/7857872/files/java.zip
 ## 🚀 Run the experiment
 
 ```bash
+# RQ1, RQ2
 bash attacks/rq_run_exp.sh <experiment_config_file>.sh
+
+# RQ3 - temperature
+bash attacks/rq3_run_exp_temp.sh <experiment_config_file>.sh
+
+# RQ3 - top-k
+bash attacks/rq3_run_exp_topk.sh <experiment_config_file>.sh
 ```
 
 
@@ -79,46 +88,46 @@ exp_name="<experiment_name>"
 ### 🔥 Step 1 - Poisoning the Dataset
 
 ```bash
-input_file="<location of a clean dataset>.jsonl"  # 📂 Input clean dataset
-output_dir_step1="<location of the output folder for dataset poisoning>"  # 📁 Output poisoned dataset
-dataset_name="<dataset name>"  # 🏷️ Dataset name
-language="<language of the dataset>"  # 🗣️ Programming language
+input_file="<location of a clean dataset>.jsonl"  # Input clean dataset
+output_dir_step1="<location of the output folder for dataset poisoning>"  # Output poisoned dataset
+dataset_name="<dataset name>"  # Dataset name
+language="<language of the dataset>"  # Programming language
+triggers=(<trigger type 1> <trigger type 2>)  # Choose 1 or more trigger types: "fixed_-1", "grammar", "LLM_codet5p"
+targets=("<The trigger sentence>")  # The sentence to trigger backdoor
+strategies=("mixed")  # "mixed" = random poisoning without targeting a specific label
 
-triggers=(<trigger type 1> <trigger type 2>)  # 🎯 Choose 1 or more trigger types: "fixed_-1", "grammar", "LLM_codet5p"
-targets=("<The trigger sentence>")  # 🏹 The sentence to trigger backdoor
-strategies=("mixed")  # 🎲 "mixed" = random poisoning without targeting a specific label
-
-poison_rates=(<poison rate 1> <poison rate 2>)  # ☣️ Poisoning rates (0 to 100)
-num_poisoned_examples_list=(<number of poisoned examples>)  # 🔢 -1 = poison all examples
-sizes=(<the size of the poisoned dataset>)  # 📏 Dataset size
+poison_rates=(<poison rate 1> <poison rate 2>)  # Poisoning rates (0 to 100)
+num_poisoned_examples_list=(<number of poisoned examples>)  # -1 = poison all examples
+sizes=(<the size of the poisoned dataset>)  # Dataset size
 ```
 
 ### 🎓 Step 2 - Training the Victim Model
 
 ```bash
-output_dir_step2="<location of the output folder for model training>"  # 📁 Model training output
-models=("<model id>")  # 🤖 Model ID, e.g., Salesforce/codet5-base
-epochs=(<number of epochs>)  # 🔄 Training epochs
-batch_sizes=(<batch size 1> <batch size 2>)  # 📊 Batch sizes
+output_dir_step2="<location of the output folder for model training>"  # Model training output
+models=("<model id>")  # Model ID, e.g., Salesforce/codet5-base
+epochs=(<number of epochs>)  # Training epochs
+batch_sizes=(<batch size 1> <batch size 2>)  # Batch sizes
+save_each_epoch=<save each epoch or not>  # Binary, 1 = save each epoch, 0 = save only the last epoch, default = 0
 ```
 
 ### 🛠️ Step 3 - Evaluating the Victim Model
 
 ```bash
-test_file="<location of the test dataset>.jsonl"  # 📂 Test dataset location
-eval_batch_size=<batch size for evaluation>  # 📏 Evaluation batch size
+test_file="<location of the test dataset>.jsonl"  # Test dataset location
+eval_batch_size=<batch size for evaluation>  # Evaluation batch size
 ```
 
 ### 📊 Step 4 - Visualizing the Results
 
 ```bash
-other_experiment_names=(<other experiment names>)  # 📈 Compare results of multiple experiments (optional)
+other_experiment_names=(<other experiment names>)  # Compare results of multiple experiments (optional)
 ```
 
 ### 🎛️ Controlling Execution Steps
 
 ```bash
-steps=(1 2 3 4) # 🚀 Control which steps to run:
+steps=(1 2 3 4) # Control which steps to run:
 # 1️⃣ Poison the dataset
 # 2️⃣ Train the model
 # 3️⃣ Evaluate the model
