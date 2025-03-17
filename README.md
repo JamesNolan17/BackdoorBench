@@ -38,6 +38,11 @@ This is the replication package for the paper "Backdoors in Your Code Summarizer
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
+## Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Usage:How to run the experiment
 
