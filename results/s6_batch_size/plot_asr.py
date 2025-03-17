@@ -4,9 +4,9 @@ import numpy as np
 from scipy.stats import pearsonr
 
 # Configuration parameters
-fig_size = (8, 6)                    # 原始3x3图的尺寸
-fig_size_avg_models = (8, 3)           # 平均模型图（1x3）的尺寸
-fig_size_avg_triggers = (8, 3)         # 平均触发器图（1x3）的尺寸
+fig_size = (8, 6)                    # Size for original 3x3 plot
+fig_size_avg_models = (8, 3)         # Size for averaged models plot (1x3)
+fig_size_avg_triggers = (8, 3)       # Size for averaged triggers plot (1x3)
 line_width = 2.5
 dot_shapes = ['o', 's', '^', 'D', 'P', '*']
 line_colors = ['#1890FF', '#26C9C3', '#FFA940', '#E65E67', '#9F69E2', '#FF69B4']
@@ -128,7 +128,7 @@ for idx, trigger_type in enumerate(trigger_types):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_ylim(0, 100)
-    # Only左侧子图显示y轴标签
+    # Only the leftmost subplot shows y-axis label
     if idx == 0:
         ax.set_ylabel("ASR (%)", fontsize=axis_label_font_size)
     else:
@@ -228,13 +228,13 @@ ax.spines['top'].set_visible(False)
 ax.set_ylim(0, 100)
 ax.set_yticks([0, 20, 40, 60, 80, 100])
 
-# Create legend arranged in 2 rows and 3 columns
+# Create legend arranged in a single column
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(
     handles, labels,
-    loc='center left',         # 图例位于图形右侧中央
-    bbox_to_anchor=(1.05, 0.5),  # 锚点位置，(1.05, 0.5) 将图例放到图表外右侧
-    ncol=1,                    # 图例排列为1列（6行）
+    loc='center left',         # Legend positioned at center left of the figure
+    bbox_to_anchor=(1.05, 0.5),  # Anchor point, (1.05, 0.5) places legend outside the right side of the plot
+    ncol=1,                    # Legend arranged in 1 column (6 rows)
     fontsize=legend_font_size
 )
 
