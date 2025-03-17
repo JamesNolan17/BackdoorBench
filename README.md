@@ -1,13 +1,23 @@
 # Backdoors in Your Code Summarizers: How Bad Is It?
 
 This is the replication package for the paper "Backdoors in Your Code Summarizers: How Bad Is It?"
+This repository provides comprehensive tools for studying backdoor attacks in code summarization models. It includes:
 
-## Project Structure
+1. **Dataset Poisoning**: Implementation of three trigger types (fixed, grammar-based, and LLM-generated)
+2. **Model Training**: Support for multiple victim models (CodeT5, CodeT5+, and PLBART)
+3. **Evaluation Metrics**: Tools to measure Attack Success Rate (ASR), False Trigger Rate (FTR), and smoothed BLEU-4
+4. **Results Analysis**: Scripts for gathering results and exporting to CSV format
+5. **Defense Mechanisms**: Implementation of the spectral signature defense technique
+
+All configuration files used in our experiments (shell scripts in the `/attacks` folder) and comprehensive experiment results (in the `/results` folder) are included in this repository.
+
+
+## 📂Project Structure
 
 ```
 .
-├── README.md: this file
-├── attacks: implementation of backdoor attacks
+├── README.md: this file.
+├── attacks: implementation of backdoor attacks.
 │   ├── A_LLM_poison_all.py: poison all the samples in the dataset using LLM-generate trigger.
 │   ├── A_inject_trigger.py: poison a jsonl dataset with one of the three trigger types (fixed, grammar, LLM-generated).
 │   ├── C_poisoned_model_eval.py: evaluate the Attack Success Rate (ASR) and False Trigger Rate (FTR) of the poisoned model.
@@ -38,13 +48,19 @@ This is the replication package for the paper "Backdoors in Your Code Summarizer
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
-## Install dependencies
+## 📦Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage:How to run the experiment
+## 📥 Download the dataset
+
+```bash
+wget https://zenodo.org/record/7857872/files/java.zip
+```
+
+## 🚀 Run the experiment
 
 ```bash
 bash attacks/rq_run_exp.sh <experiment_config_file>.sh
@@ -52,36 +68,59 @@ bash attacks/rq_run_exp.sh <experiment_config_file>.sh
 
 
 
-## Structure of an experiment config file
+## 🧪 Structure of an Experiment Config File
+The following variables define a complete experiment configuration.
+Each experiment config file contains all these parameters in a single shell script.
 
 ```bash
 exp_name="<experiment_name>"
+```
 
-# Variables for step 1 - Poisoning the dataset
-input_file="<location of a clean dataset>.jsonl"
-output_dir_step1="<location of the output folder for dataset poisoning>"
-dataset_name="<dataset name>"
-language="<language of the dataset>"
-triggers=(<trigger type 1> <trigger type 2>) # can choose 1 or more trigger types from "fixed_-1", "grammar", "LLM_codet5p"
-targets=("<The trigger sentence>")
-strategies=("mixed") # Keep it to mixed to random poison the dataset without picking a certain label to poison.
-poison_rates=(<poison rate 1> <poison rate 2>) # can choose 1 or more poison rates from any float number between 0 and 100.
-num_poisoned_examples_list=(<number of poisoned examples>) # -1 means poison all the examples in the dataset.
-sizes=(<the size of the poisoned dataset>)
+### 🔥 Step 1 - Poisoning the Dataset
 
-# Variables for step 2 - Training the victim model
-output_dir_step2="<location of the output folder for model training>"
-models=("<model id>") #e.g., Salesforce/codet5-base
-epochs=(<number of epochs>)
-batch_sizes=(<batch size 1> <batch size 2>) # can choose 1 or more batch sizes from any integer number.
+```bash
+input_file="<location of a clean dataset>.jsonl"  # 📂 Input clean dataset
+output_dir_step1="<location of the output folder for dataset poisoning>"  # 📁 Output poisoned dataset
+dataset_name="<dataset name>"  # 🏷️ Dataset name
+language="<language of the dataset>"  # 🗣️ Programming language
 
-# Variables for step 3 - Evaluating the victim model
-test_file="<location of the test dataset>.jsonl"
-eval_batch_size=<batch size for evaluation>
+triggers=(<trigger type 1> <trigger type 2>)  # 🎯 Choose 1 or more trigger types: "fixed_-1", "grammar", "LLM_codet5p"
+targets=("<The trigger sentence>")  # 🏹 The sentence to trigger backdoor
+strategies=("mixed")  # 🎲 "mixed" = random poisoning without targeting a specific label
 
-# Variables for step 4 - Visualize the results
-other_experiment_names=(<other experiment names>) # optional, if you key in the name of other experiments, the results of these experiments will be visualized in the same table for comparison.
+poison_rates=(<poison rate 1> <poison rate 2>)  # ☣️ Poisoning rates (0 to 100)
+num_poisoned_examples_list=(<number of poisoned examples>)  # 🔢 -1 = poison all examples
+sizes=(<the size of the poisoned dataset>)  # 📏 Dataset size
+```
 
-# Use this switch to control which steps to run
-steps=(1 2 3 4) #1: poison the dataset, 2: train the model, 3: evaluate the model, 4: visualize the results, can use it to control which steps to run.
+### 🎓 Step 2 - Training the Victim Model
+
+```bash
+output_dir_step2="<location of the output folder for model training>"  # 📁 Model training output
+models=("<model id>")  # 🤖 Model ID, e.g., Salesforce/codet5-base
+epochs=(<number of epochs>)  # 🔄 Training epochs
+batch_sizes=(<batch size 1> <batch size 2>)  # 📊 Batch sizes
+```
+
+### 🛠️ Step 3 - Evaluating the Victim Model
+
+```bash
+test_file="<location of the test dataset>.jsonl"  # 📂 Test dataset location
+eval_batch_size=<batch size for evaluation>  # 📏 Evaluation batch size
+```
+
+### 📊 Step 4 - Visualizing the Results
+
+```bash
+other_experiment_names=(<other experiment names>)  # 📈 Compare results of multiple experiments (optional)
+```
+
+### 🎛️ Controlling Execution Steps
+
+```bash
+steps=(1 2 3 4) # 🚀 Control which steps to run:
+# 1️⃣ Poison the dataset
+# 2️⃣ Train the model
+# 3️⃣ Evaluate the model
+# 4️⃣ Gather the results to CSV files
 ```
