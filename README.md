@@ -50,19 +50,19 @@ All configuration files used in our experiments (shell scripts in the `/attacks`
     └── tiny_utils.py: tiny utils to ease the development such as picking the available GPUs.
 ```
 
-## 📦 Install dependencies
+## 📦 Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 📥 Download the dataset
+## 📥 Download the Dataset
 
 ```bash
 wget https://zenodo.org/record/7857872/files/java.zip
 ```
 
-## 🚀 Run the experiment
+## 🚀 Run the Experiment
 
 ```bash
 # RQ1, RQ2
